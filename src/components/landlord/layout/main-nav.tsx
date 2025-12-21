@@ -14,6 +14,7 @@ import PersonIcon from '@mui/icons-material/Person';
 
 import { usePopover } from '@/hooks/use-popover';
 import { useUser } from '@/hooks/use-user';
+import NotificationBell from '@/components/core/notification-bell';
 
 import { MobileNav } from './mobile-nav';
 import { UserPopover } from './user-popover';
@@ -56,13 +57,7 @@ export function MainNav(): React.JSX.Element {
             </Tooltip>
           </Stack>
           <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-            <Tooltip title="Notifications">
-              <Badge badgeContent={4} color="success" variant="dot">
-                <IconButton>
-                  <BellIcon />
-                </IconButton>
-              </Badge>
-            </Tooltip>
+            <NotificationBell />
             <Avatar
               onClick={userPopover.handleOpen}
               ref={userPopover.anchorRef}

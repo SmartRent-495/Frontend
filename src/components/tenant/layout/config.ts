@@ -8,5 +8,4 @@ export const tenantNavItems = [
   { key: 'lease', title: 'My Lease', href: paths.tenant.lease, icon: 'file-text' },
   { key: 'payments', title: 'Payments', href: paths.tenant.payments, icon: 'credit-card' },
   { key: 'maintenance', title: 'Maintenance', href: paths.tenant.maintenance, icon: 'wrench' },
-  { key: 'documents', title: 'Documents', href: paths.tenant.documents, icon: 'folder' },
 ] satisfies NavItemConfig[];

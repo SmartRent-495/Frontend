@@ -318,7 +318,7 @@ export default function TenantMaintenancePage() {
 
         {/* Stats Cards */}
         <Grid container spacing={2}>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Card 
               sx={{ 
                 cursor: 'pointer',
@@ -340,7 +340,7 @@ export default function TenantMaintenancePage() {
             </Card>
           </Grid>
           
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Card 
               sx={{ 
                 cursor: 'pointer',
@@ -364,7 +364,7 @@ export default function TenantMaintenancePage() {
             </Card>
           </Grid>
           
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Card 
               sx={{ 
                 cursor: 'pointer',
@@ -386,7 +386,7 @@ export default function TenantMaintenancePage() {
             </Card>
           </Grid>
           
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Card 
               sx={{ 
                 cursor: 'pointer',
@@ -750,21 +750,21 @@ export default function TenantMaintenancePage() {
                 <Divider />
 
                 <Grid container spacing={2}>
-                  <Grid item xs={6}>
+                  <Grid size={{ xs: 6 }}>
                     <Typography variant="caption" color="text.secondary">Property</Typography>
                     <Typography variant="body2" fontWeight="medium">
                       {selectedRequest.property_title || selectedRequest.property_address}
                     </Typography>
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid size={{ xs: 6 }}>
                     <Typography variant="caption" color="text.secondary">Category</Typography>
                     <Typography variant="body2" fontWeight="medium">{selectedRequest.category}</Typography>
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid size={{ xs: 6 }}>
                     <Typography variant="caption" color="text.secondary">Priority</Typography>
                     <Chip label={selectedRequest.priority} color={getPriorityColor(selectedRequest.priority)} size="small" />
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid size={{ xs: 6 }}>
                     <Typography variant="caption" color="text.secondary">Created</Typography>
                     <Typography variant="body2">
                       {new Date(selectedRequest.createdAt).toLocaleString()}
