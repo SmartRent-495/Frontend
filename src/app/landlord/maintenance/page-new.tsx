@@ -289,7 +289,7 @@ export default function LandlordMaintenancePage() {
 
         {/* Stats Dashboard */}
         <Grid container spacing={2}>
-          <Grid item xs={12} sm={6} md={2.4}>
+          <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
             <Card elevation={2}>
               <CardContent sx={{ textAlign: 'center', py: 3 }}>
                 <Typography variant="h3" fontWeight="bold" color="primary.main" gutterBottom>
@@ -302,7 +302,7 @@ export default function LandlordMaintenancePage() {
             </Card>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={2.4}>
+          <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
             <Card 
               elevation={2}
               sx={{ 
@@ -326,7 +326,7 @@ export default function LandlordMaintenancePage() {
             </Card>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={2.4}>
+          <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
             <Card 
               elevation={2}
               sx={{ 
@@ -348,7 +348,7 @@ export default function LandlordMaintenancePage() {
             </Card>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={2.4}>
+          <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
             <Card elevation={2}>
               <CardContent sx={{ textAlign: 'center', py: 3 }}>
                 <Typography variant="h3" fontWeight="bold" color="error.main" gutterBottom>
@@ -361,7 +361,7 @@ export default function LandlordMaintenancePage() {
             </Card>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={2.4}>
+          <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
             <Card elevation={2}>
               <CardContent sx={{ textAlign: 'center', py: 3 }}>
                 <Typography variant="h3" fontWeight="bold" color="success.main" gutterBottom>
@@ -378,7 +378,7 @@ export default function LandlordMaintenancePage() {
         {/* Financial Summary */}
         <Paper elevation={2} sx={{ p: 3, bgcolor: 'primary.50', border: 1, borderColor: 'primary.200' }}>
           <Grid container spacing={3}>
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <Stack direction="row" spacing={2} alignItems="center">
                 <Avatar sx={{ bgcolor: 'primary.main', width: 56, height: 56 }}>
                   <MoneyIcon />
@@ -393,7 +393,7 @@ export default function LandlordMaintenancePage() {
                 </Box>
               </Stack>
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <Stack direction="row" spacing={2} alignItems="center">
                 <Avatar sx={{ bgcolor: 'success.main', width: 56, height: 56 }}>
                   <TrendingUpIcon />
@@ -408,7 +408,7 @@ export default function LandlordMaintenancePage() {
                 </Box>
               </Stack>
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <Stack direction="row" spacing={2} alignItems="center">
                 <Avatar sx={{ bgcolor: 'info.main', width: 56, height: 56 }}>
                   <CheckCircleIcon />
@@ -487,7 +487,7 @@ export default function LandlordMaintenancePage() {
                 <CardContent sx={{ p: 3 }}>
                   <Grid container spacing={3}>
                     {/* Request Info */}
-                    <Grid item xs={12} md={5}>
+                    <Grid size={{ xs: 12, md: 5 }}>
                       <Stack spacing={2}>
                         <Stack direction="row" spacing={1} flexWrap="wrap">
                           <Chip
@@ -564,7 +564,7 @@ export default function LandlordMaintenancePage() {
                     </Grid>
                     
                     {/* Management Info */}
-                    <Grid item xs={12} md={5}>
+                    <Grid size={{ xs: 12, md: 5 }}>
                       <Paper variant="outlined" sx={{ p: 2, height: '100%', bgcolor: 'grey.50' }}>
                         <Typography variant="subtitle2" fontWeight="bold" gutterBottom color="primary.main">
                           Management Details
@@ -630,7 +630,7 @@ export default function LandlordMaintenancePage() {
                     </Grid>
                     
                     {/* Actions */}
-                    <Grid item xs={12} md={2} sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Grid size={{ xs: 12, md: 2 }} sx={{ display: 'flex', alignItems: 'center' }}>
                       <Button
                         variant="contained"
                         fullWidth
@@ -801,7 +801,7 @@ export default function LandlordMaintenancePage() {
             />
             
             <Grid container spacing={2}>
-              <Grid item xs={6}>
+              <Grid size={{ xs: 6 }}>
                 <TextField
                   label="Estimated Cost ($)"
                   type="number"
@@ -814,7 +814,7 @@ export default function LandlordMaintenancePage() {
                   }}
                 />
               </Grid>
-              <Grid item xs={6}>
+              <Grid size={{ xs: 6 }}>
                 <TextField
                   label="Actual Cost ($)"
                   type="number"

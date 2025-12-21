@@ -13,7 +13,7 @@ export const paths = {
     tenants: '/landlord/tenants',
     maintenance: '/landlord/maintenance',
     payments: '/landlord/payments',
-    account: '/landlord/account',
+    notifications: '/landlord/notifications',
     settings: '/landlord/settings',
   },
   // Tenant Dashboard
@@ -25,7 +25,7 @@ export const paths = {
     lease: '/tenant/lease',
     maintenance: '/tenant/maintenance',
     payments: '/tenant/payments',
-    documents: '/tenant/documents',
+    notifications: '/tenant/notifications',
     account: '/tenant/account',
     settings: '/tenant/settings',
     myLease: '/tenant/my-lease',
