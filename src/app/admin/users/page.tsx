@@ -10,20 +10,24 @@ export default function AdminUsersPage(): React.JSX.Element {
   const [error, setError] = React.useState<string | null>(null);
   const [rows, setRows] = React.useState<any[]>([]);
 
+  const load = React.useCallback(async () => {
+    const res = await adminApi.collection('users');
+    setRows(res.data || []);
+  }, []);
+
   React.useEffect(() => {
     (async () => {
       try {
         setLoading(true);
         setError(null);
-        const res = await adminApi.collection('users');
-        setRows(res.data || []);
+        await load();
       } catch (e: any) {
         setError(e.message || 'Failed to load users');
       } finally {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [load]);
 
   if (loading) {
     return (
@@ -38,7 +42,8 @@ export default function AdminUsersPage(): React.JSX.Element {
     <Stack spacing={2}>
       <Typography variant="h4">Users</Typography>
       {error ? <Alert severity="error">{error}</Alert> : null}
-      <AdminTable rows={rows} />
+
+      <AdminTable collectionName="users" rows={rows} onRefresh={load} />
     </Stack>
   );
 }

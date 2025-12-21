@@ -64,19 +64,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         sx={{
           width: drawerWidth,
           flexShrink: 0,
-          '& .MuiDrawer-paper': { width: drawerWidth, boxSizing: 'border-box' },
+          '& .MuiDrawer-paper': {
+            width: drawerWidth,
+            boxSizing: 'border-box',
+            backgroundColor: '#0f0f0f', 
+            color: '#fff',
+            borderRight: '1px solid #1f1f1f',
+          },
         }}
       >
-        <Toolbar sx={{ px: 2 }}>
+
+        <Toolbar sx={{ px: 2 , pt: 3, pb: 2}}>
           <Box>
-            <Typography variant="h6">Admin Panel</Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="h5">Admin Panel</Typography>
+            <Typography variant="caption" sx={{ color: '#aaa', textAlign: 'center' }}>
               {user.email}
             </Typography>
           </Box>
         </Toolbar>
 
-        <Divider />
+        <Divider sx={{ borderColor: '#2a2a2a' }} />
+
 
         <List sx={{ flexGrow: 1 }}>
           {navItems.map((item) => {
@@ -86,23 +94,53 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 key={item.href}
                 selected={selected}
                 onClick={() => router.push(item.href)}
+                sx={{
+                  color: '#e0e0e0',
+                  '&:hover': {
+                    backgroundColor: '#1f1f1f',
+                  },
+                  '&.Mui-selected': {
+                    backgroundColor: '#262626',
+                    color: '#fff',
+                    '&:hover': {
+                      backgroundColor: '#303030',
+                    },
+                  },
+                }}
               >
+
                 <ListItemText primary={item.label} />
               </ListItemButton>
             );
           })}
         </List>
 
-        <Divider />
+        <Divider sx={{ borderColor: '#2a2a2a' }} />
+
 
         <Stack spacing={1} sx={{ p: 2 }}>
-          <Button variant="outlined" color="inherit" onClick={onSignOut} disabled={signingOut}>
+          <Button
+            variant="outlined"
+            color="inherit"
+            onClick={onSignOut}
+            disabled={signingOut}
+            sx={{
+              borderColor: '#444',
+              color: '#fff',
+              '&:hover': {
+                borderColor: '#666',
+                backgroundColor: '#1f1f1f',
+              },
+            }}
+          >
+
             {signingOut ? 'Signing out…' : 'Sign out'}
           </Button>
 
-          <Typography variant="caption" color="text.secondary">
+          <Typography variant="caption" sx={{ color: '#aaa',textAlign: 'center' }}>
             Signed in as admin
           </Typography>
+
         </Stack>
       </Drawer>
 
