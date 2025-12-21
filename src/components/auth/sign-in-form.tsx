@@ -27,18 +27,18 @@ import { useUser } from '@/hooks/use-user';
 const schema = zod.object({
   email: zod.string().min(1, { message: 'Email is required' }).email(),
   password: zod.string().min(1, { message: 'Password is required' }),
+  adminId: zod.string().optional(),
 });
 
 type Values = zod.infer<typeof schema>;
 
-const defaultValues = { email: '', password: '' } satisfies Values;
+const defaultValues = { email: '', password: '', adminId: '' } satisfies Values;
 
 export function SignInForm(): React.JSX.Element {
   const router = useRouter();
-
   const { checkSession } = useUser();
 
-  const [showPassword, setShowPassword] = React.useState<boolean>();
+  const [showPassword, setShowPassword] = React.useState<boolean>(false);
   const [adminMode, setAdminMode] = React.useState(false);
   const [adminError, setAdminError] = React.useState('');
 
@@ -56,7 +56,11 @@ export function SignInForm(): React.JSX.Element {
       setIsPending(true);
       setAdminError('');
 
-      const { error } = await authClient.signInWithPassword(values);
+      // ✅ Only pass email/password to auth
+      const { error } = await authClient.signInWithPassword({
+        email: values.email,
+        password: values.password,
+      });
 
       if (error) {
         setError('root', { type: 'server', message: error });
@@ -64,23 +68,42 @@ export function SignInForm(): React.JSX.Element {
         return;
       }
 
-      // Get user data to check role
+      // Load user profile from backend (role + admin_id)
       const { data: user } = await authClient.getUser();
-      
-      if (adminMode && user?.role !== 'admin') {
-        setAdminError('Only admins can log in here.');
-        setIsPending(false);
-        return;
+
+      if (adminMode) {
+        const enteredAdminId = (values.adminId || '').trim();
+
+        if (!enteredAdminId) {
+          setAdminError('Admin ID is required for admin login.');
+          await authClient.signOut();
+          setIsPending(false);
+          return;
+        }
+
+        if (user?.role !== 'admin') {
+          setAdminError('Only admins can log in here.');
+          await authClient.signOut();
+          setIsPending(false);
+          return;
+        }
+
+        // ✅ admin_id must exist and match
+        if (!user?.admin_id || user.admin_id !== enteredAdminId) {
+          setAdminError('Invalid Admin ID.');
+          await authClient.signOut();
+          setIsPending(false);
+          return;
+        }
+
+        // optional: redirect admins to admin page
+        router.push('/admin');
       }
 
-      
       await checkSession?.();
-      
       setIsPending(false);
-      
-      
     },
-    [adminMode, checkSession, setError]
+    [adminMode, checkSession, router, setError]
   );
 
   return (
@@ -94,6 +117,7 @@ export function SignInForm(): React.JSX.Element {
           </Link>
         </Typography>
       </Stack>
+
       <form onSubmit={handleSubmit(onSubmit)}>
         <Stack spacing={2}>
           <Controller
@@ -107,6 +131,7 @@ export function SignInForm(): React.JSX.Element {
               </FormControl>
             )}
           />
+
           <Controller
             control={control}
             name="password"
@@ -141,23 +166,35 @@ export function SignInForm(): React.JSX.Element {
               </FormControl>
             )}
           />
+
           <FormControlLabel
-            control={
-              <Checkbox
-                checked={adminMode}
-                onChange={e => setAdminMode(e.target.checked)}
-                color="primary"
-              />
-            }
+            control={<Checkbox checked={adminMode} onChange={(e) => setAdminMode(e.target.checked)} color="primary" />}
             label="Admin Login"
           />
-          {adminError && <Alert severity="error">{adminError}</Alert>}
+
+          {adminMode ? (
+            <Controller
+              control={control}
+              name="adminId"
+              render={({ field }) => (
+                <FormControl>
+                  <InputLabel>Admin ID</InputLabel>
+                  <OutlinedInput {...field} label="Admin ID" />
+                </FormControl>
+              )}
+            />
+          ) : null}
+
+          {adminError ? <Alert severity="error">{adminError}</Alert> : null}
+
           <div>
             <Link component={RouterLink} href={paths.auth.resetPassword} variant="subtitle2">
               Forgot password?
             </Link>
           </div>
+
           {errors.root ? <Alert color="error">{errors.root.message}</Alert> : null}
+
           <Button disabled={isPending} type="submit" variant="contained">
             Sign in
           </Button>

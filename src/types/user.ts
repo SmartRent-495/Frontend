@@ -3,6 +3,7 @@ export interface User {
   username: string;
   email: string;
   role: 'landlord' | 'tenant' | 'admin';
+  admin_id?: string;
   first_name: string;
   last_name: string;
   phone?: string;
