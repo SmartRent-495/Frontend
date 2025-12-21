@@ -115,11 +115,6 @@ cd backend
 
 This project is licensed under the MIT License.
 
-## 📞 Contact
-
-- **Course**: CNG 495 - Cloud Computing
-- **Semester**: Fall 2025
-- **Institution**: METU, NCC
 
 ## 🙏 Acknowledgments
 
