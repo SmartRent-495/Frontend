@@ -83,11 +83,15 @@ function CheckoutForm({ payment }: { payment: Payment }) {
       return;
     }
 
+    if (loading) {
+      return; // Prevent double submission
+    }
+
     setLoading(true);
     setError("");
 
     try {
-      const { error: submitError } = await stripe.confirmPayment({
+      const { error: submitError, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
           return_url: `${window.location.origin}/tenant/payments?success=true`,
@@ -97,16 +101,43 @@ function CheckoutForm({ payment }: { payment: Payment }) {
 
       if (submitError) {
         setError(submitError.message || "Payment failed");
-      } else {
+        setLoading(false);
+      } else if (paymentIntent?.status === 'succeeded') {
+        const { getAuth } = await import("firebase/auth");
+        const auth = getAuth();
+        const token = await auth.currentUser?.getIdToken();
+        
+        if (token) {
+          try {
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            const syncRes = await fetch(`${API_URL}/payments/sync/${payment.id}`, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            });
+            
+            if (!syncRes.ok) {
+              const syncData = await syncRes.json();
+              console.warn("Sync warning:", syncData);
+            }
+          } catch (syncErr) {
+            console.error("Sync error:", syncErr);
+          }
+        }
+        
         setSuccess(true);
         setTimeout(() => {
           router.push("/tenant/payments");
         }, 2000);
+      } else {
+        setError(`Payment status: ${paymentIntent?.status || 'unknown'}. Please contact support if charged.`);
+        setLoading(false);
       }
     } catch (err: any) {
       console.error("Payment error:", err);
       setError(err.message || "An unexpected error occurred");
-    } finally {
       setLoading(false);
     }
   };
@@ -189,6 +220,7 @@ export default function PaymentDetailPage() {
   const [clientSecret, setClientSecret] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [fetched, setFetched] = useState(false);
 
   useEffect(() => {
     if (userLoading) return;
@@ -197,12 +229,15 @@ export default function PaymentDetailPage() {
       return;
     }
 
+    if (fetched) return;
+    setFetched(true);
+
     fetchPayment().catch(err => {
       console.error("Error in fetchPayment:", err);
       setError(err.message || "Failed to load payment");
       setLoading(false);
     });
-  }, [user, userLoading, paymentId, router]);
+  }, [user, userLoading, paymentId, fetched]);
 
   const fetchPayment = async () => {
     try {
@@ -232,10 +267,20 @@ export default function PaymentDetailPage() {
 
       // Check for failed or cancelled status
       if (data.status === "failed" || data.status === "cancelled") {
-        // Allow retry - will create new payment intent
+        setError("This payment has been cancelled or failed. Please contact your landlord.");
+        setLoading(false);
+        return;
       }
 
-      // Initiate payment (creates or retrieves PaymentIntent)
+      // If we already have a clientSecret from a previous PaymentIntent, use it
+      if (data.clientSecret && data.stripePaymentIntentId) {
+        console.log("Using existing PaymentIntent:", data.stripePaymentIntentId);
+        setClientSecret(data.clientSecret);
+        setLoading(false);
+        return;
+      }
+
+      // Only create new PaymentIntent if we don't have one
       const payRes = await fetch(`${API_URL}/payments/pay/${data.id}`, {
         method: "POST",
         headers: {
@@ -626,6 +671,21 @@ export default function PaymentDetailPage() {
             </Stack>
           </CardContent>
         </Card>
+
+        {/* Test Card Info (for development) */}
+        {process.env.NODE_ENV === 'development' && (
+          <Alert severity="info">
+            <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+              Test Mode - Use these test cards:
+            </Typography>
+            <Typography variant="body2">
+              <strong>Success:</strong> 4242 4242 4242 4242<br />
+              <strong>Expiry:</strong> Any future date (e.g., 12/34)<br />
+              <strong>CVC:</strong> Any 3 digits (e.g., 123)<br />
+              <strong>ZIP:</strong> Any 5 digits (e.g., 12345)
+            </Typography>
+          </Alert>
+        )}
 
         {/* Security Notice */}
         <Alert severity="info">

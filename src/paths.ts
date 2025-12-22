@@ -9,6 +9,7 @@ export const paths = {
   landlord: {
     overview: '/landlord',
     properties: '/landlord/properties',
+    applications: '/landlord/applications',
     leases: '/landlord/leases',
     tenants: '/landlord/tenants',
     maintenance: '/landlord/maintenance',
