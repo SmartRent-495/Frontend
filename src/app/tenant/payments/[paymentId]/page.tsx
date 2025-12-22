@@ -22,12 +22,16 @@ import {
   CircularProgress,
   Divider,
   Chip,
+  Grid,
 } from '@mui/material';
 import {
   CheckCircle as CheckCircleIcon,
   ArrowBack as ArrowBackIcon,
   CreditCard as CreditCardIcon,
   Warning as WarningIcon,
+  Home as HomeIcon,
+  CalendarToday as CalendarIcon,
+  AttachMoney as MoneyIcon,
 } from '@mui/icons-material';
 
 const stripePromise = loadStripe(
@@ -36,25 +40,24 @@ const stripePromise = loadStripe(
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-if (typeof window !== 'undefined') {
-  if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
-    console.error("⚠️ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not set!");
-  } else if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY.startsWith('pk_')) {
-    console.error("❌ Invalid Stripe key format");
-  } else {
-    console.log("✅ Stripe key loaded");
-  }
-}
-
 interface Payment {
   id: string;
-  leaseId: string;
+  tenantId: string;
+  landlordId: string;
+  propertyId: string;
+  leaseId?: string;
   amount: number;
+  totalAmount: number;
   currency: string;
   type: string;
   period: string;
   status: string;
   stripePaymentIntentId: string;
+  dueDate?: any;
+  propertyTitle?: string;
+  propertyAddress?: string;
+  propertyCity?: string;
+  propertyState?: string;
 }
 
 function CheckoutForm({ payment }: { payment: Payment }) {
@@ -115,7 +118,7 @@ function CheckoutForm({ payment }: { payment: Payment }) {
         <Typography variant="h4" fontWeight="bold" color="success.main" gutterBottom>
           Payment Successful!
         </Typography>
-        <Typography color="text.secondary">Redirecting...</Typography>
+        <Typography color="text.secondary">Redirecting to your payments...</Typography>
       </Box>
     );
   }
@@ -162,7 +165,7 @@ function CheckoutForm({ payment }: { payment: Payment }) {
             fontWeight: 'bold'
           }}
         >
-          {loading ? "Processing..." : `Pay $${payment.amount.toFixed(2)}`}
+          {loading ? "Processing..." : `Pay ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(payment.totalAmount || payment.amount)}`}
         </Button>
 
         {!elementReady && (
@@ -227,60 +230,60 @@ export default function PaymentDetailPage() {
         return;
       }
 
-      if (data.stripePaymentIntentId) {
-        const intentRes = await fetch(`${API_URL}/payments/get-intent`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            paymentId: data.id,
-          }),
-        });
+      // Check for failed or cancelled status
+      if (data.status === "failed" || data.status === "cancelled") {
+        // Allow retry - will create new payment intent
+      }
 
-        if (!intentRes.ok) {
-          const errorData = await intentRes.json();
-          
-          if (errorData.error === "Payment already completed") {
-            try {
-              const syncRes = await fetch(`${API_URL}/payments/sync/${data.id}`, {
-                method: "POST",
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              });
+      // Initiate payment (creates or retrieves PaymentIntent)
+      const payRes = await fetch(`${API_URL}/payments/pay/${data.id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-              if (syncRes.ok) {
-                window.location.reload();
-                return;
-              }
-            } catch (syncErr) {
-              console.error("Failed to sync payment:", syncErr);
+      if (!payRes.ok) {
+        const errorData = await payRes.json();
+        
+        if (errorData.error === "Payment already completed") {
+          // Sync with Stripe to update local status
+          try {
+            const syncRes = await fetch(`${API_URL}/payments/sync/${data.id}`, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            });
+
+            if (syncRes.ok) {
+              window.location.reload();
+              return;
             }
-            
-            setPayment({ ...data, status: "paid" });
-            setLoading(false);
-            return;
+          } catch (syncErr) {
+            console.error("Failed to sync payment:", syncErr);
           }
           
-          throw new Error(errorData.error || "Failed to get payment intent");
-        }
-
-        const intentData = await intentRes.json();
-        
-        if (!intentData.clientSecret) {
-          throw new Error("No client secret returned from server");
-        }
-
-        if (!intentData.clientSecret.startsWith('pi_') || !intentData.clientSecret.includes('_secret_')) {
-          throw new Error("Invalid payment secret format");
+          setPayment({ ...data, status: "paid" });
+          setLoading(false);
+          return;
         }
         
-        setClientSecret(intentData.clientSecret);
-      } else {
-        throw new Error("No Stripe payment intent ID found");
+        throw new Error(errorData.error || "Failed to initiate payment");
       }
+
+      const payData = await payRes.json();
+      
+      if (!payData.clientSecret) {
+        throw new Error("No client secret returned from server");
+      }
+
+      if (!payData.clientSecret.startsWith('pi_') || !payData.clientSecret.includes('_secret_')) {
+        throw new Error("Invalid payment secret format");
+      }
+      
+      setClientSecret(payData.clientSecret);
     } catch (err: any) {
       console.error("Fetch payment error:", err);
       setError(err.message || "Failed to load payment details");
@@ -294,6 +297,35 @@ export default function PaymentDetailPage() {
       style: 'currency',
       currency: 'USD'
     }).format(amount);
+  };
+
+  const formatDate = (timestamp: any) => {
+    if (!timestamp) return '-';
+    const date = timestamp._seconds 
+      ? new Date(timestamp._seconds * 1000)
+      : new Date(timestamp);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
+  const getPaymentType = (payment: any) => {
+    const types = [];
+    if (payment.rentAmount > 0) types.push('Rent');
+    if (payment.utilitiesAmount > 0) types.push('Utilities');
+    if (payment.depositAmount > 0) types.push('Deposit');
+    return types.length > 0 ? types.join(' + ') : 'Payment';
+  };
+  
+
+  const isOverdue = (dueDate: any) => {
+    if (!dueDate) return false;
+    const due = dueDate._seconds 
+      ? new Date(dueDate._seconds * 1000)
+      : new Date(dueDate);
+    return due < new Date();
   };
 
   if (userLoading || loading) {
@@ -353,38 +385,67 @@ export default function PaymentDetailPage() {
                   <Typography variant="h4" fontWeight="bold" color="success.main" gutterBottom>
                     Payment Completed
                   </Typography>
+                  <Typography variant="body1" color="text.secondary">
+                    Thank you for your payment!
+                  </Typography>
                 </Box>
 
                 <Divider />
 
-                <Box>
-                  <Stack spacing={2}>
+                {/* Property Info */}
+                <Box sx={{ bgcolor: 'grey.50', p: 3, borderRadius: 2 }}>
+                  <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
+                    <HomeIcon color="primary" sx={{ fontSize: 32 }} />
                     <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        Period
+                      <Typography variant="h6" fontWeight="bold">
+                        {payment.propertyTitle || 'Property'}
                       </Typography>
-                      <Typography variant="body1" fontWeight="medium">
-                        {payment.period}
-                      </Typography>
-                    </Box>
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        Type
-                      </Typography>
-                      <Typography variant="body1" fontWeight="medium" sx={{ textTransform: 'capitalize' }}>
-                        {payment.type}
-                      </Typography>
-                    </Box>
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        Amount
-                      </Typography>
-                      <Typography variant="h5" fontWeight="bold" color="primary">
-                        {formatCurrency(payment.amount)}
-                      </Typography>
+                      {payment.propertyAddress && (
+                        <Typography variant="body2" color="text.secondary">
+                          {payment.propertyAddress}
+                        </Typography>
+                      )}
                     </Box>
                   </Stack>
                 </Box>
+
+                <Grid container spacing={3}>
+                  <Grid size={{ xs: 6}} >
+
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Period
+                    </Typography>
+                    <Stack direction="row" spacing={0.5} alignItems="center">
+                      <CalendarIcon fontSize="small" color="action" />
+                      <Typography variant="body1" fontWeight="bold">
+                        {payment.period}
+                      </Typography>
+                    </Stack>
+                  </Grid>
+                  
+                  <Grid size={{ xs: 6}}>
+
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Type
+                    </Typography>
+                    <Chip
+                      label={getPaymentType(payment)}
+                      size="small"
+                      sx={{ fontWeight: 'bold' }}
+                    />
+
+                  </Grid>
+
+                  <Grid size={{ xs: 12 }} >
+
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Amount Paid
+                    </Typography>
+                    <Typography variant="h4" fontWeight="bold" color="success.main">
+                      {formatCurrency(payment.totalAmount || payment.amount)}
+                    </Typography>
+                  </Grid>
+                </Grid>
               </Stack>
             </CardContent>
           </Card>
@@ -393,60 +454,7 @@ export default function PaymentDetailPage() {
     );
   }
 
-  if (!clientSecret) {
-    return (
-      <Container maxWidth="md" sx={{ py: 4 }}>
-        <Stack spacing={3}>
-          <Button
-            startIcon={<ArrowBackIcon />}
-            onClick={() => router.push("/tenant/payments")}
-            sx={{ alignSelf: 'flex-start' }}
-          >
-            Back to payments
-          </Button>
-
-          <Card>
-            <CardContent>
-              <Stack spacing={2}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <CircularProgress size={24} />
-                  <Typography variant="h6" fontWeight="bold">
-                    Preparing Payment...
-                  </Typography>
-                </Box>
-                <Typography variant="body2" color="text.secondary">
-                  Setting up your payment. This should only take a moment.
-                </Typography>
-              </Stack>
-            </CardContent>
-          </Card>
-        </Stack>
-      </Container>
-    );
-  }
-
-  if (!clientSecret.startsWith('pi_') || !clientSecret.includes('_secret_')) {
-    return (
-      <Container maxWidth="md" sx={{ py: 4 }}>
-        <Stack spacing={3}>
-          <Alert severity="error" icon={<WarningIcon />}>
-            <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
-              Invalid Payment Configuration
-            </Typography>
-            <Typography variant="body2">
-              The payment secret is invalid. Please try creating a new payment.
-            </Typography>
-          </Alert>
-          <Button
-            startIcon={<ArrowBackIcon />}
-            onClick={() => router.push("/tenant/payments")}
-          >
-            Back to payments
-          </Button>
-        </Stack>
-      </Container>
-    );
-  }
+  const overdue = isOverdue(payment.dueDate);
 
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
@@ -459,6 +467,17 @@ export default function PaymentDetailPage() {
           Back to payments
         </Button>
 
+        {overdue && (
+          <Alert severity="error" icon={<WarningIcon />}>
+            <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+              Payment Overdue
+            </Typography>
+            <Typography variant="body2">
+              This payment was due on {formatDate(payment.dueDate)}. Please complete it as soon as possible.
+            </Typography>
+          </Alert>
+        )}
+
         <Card>
           <CardContent>
             <Stack spacing={4}>
@@ -468,49 +487,119 @@ export default function PaymentDetailPage() {
 
               <Divider />
 
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
-                <Box sx={{ flex: '1 1 150px' }}>
+              {/* Property Information */}
+              <Box sx={{ bgcolor: 'grey.50', p: 3, borderRadius: 2 }}>
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Box
+                    sx={{
+                      p: 1.5,
+                      bgcolor: 'primary.main',
+                      borderRadius: 2,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <HomeIcon sx={{ color: 'white', fontSize: 28 }} />
+                  </Box>
+                  <Box>
+                    <Typography variant="h6" fontWeight="bold">
+                      {payment.propertyTitle || 'Property'}
+                    </Typography>
+                    {payment.propertyAddress && (
+                      <Typography variant="body2" color="text.secondary">
+                        {payment.propertyAddress}
+                        {payment.propertyCity && `, ${payment.propertyCity}`}
+                        {payment.propertyState && `, ${payment.propertyState}`}
+                      </Typography>
+                    )}
+                  </Box>
+                </Stack>
+              </Box>
+
+              {/* Payment Details */}
+              <Grid container spacing={3}>
+                <Grid size={{ xs: 12, sm: 3}}>
+
                   <Typography variant="body2" color="text.secondary" gutterBottom>
                     Period
                   </Typography>
-                  <Typography variant="body1" fontWeight="bold">
-                    {payment.period}
-                  </Typography>
-                </Box>
-                <Box sx={{ flex: '1 1 150px' }}>
+                  <Stack direction="row" spacing={0.5} alignItems="center">
+                    <CalendarIcon fontSize="small" color="action" />
+                    <Typography variant="body1" fontWeight="bold">
+                      {payment.period}
+                    </Typography>
+                  </Stack>
+                </Grid>
+                
+                <Grid size={{ xs: 6, sm: 3}}>
+
                   <Typography variant="body2" color="text.secondary" gutterBottom>
                     Type
                   </Typography>
-                  <Chip 
-                    label={payment.type}
+                  <Chip
+                    label={getPaymentType(payment)}
                     size="small"
-                    sx={{ textTransform: 'capitalize', fontWeight: 'bold' }}
+                    sx={{ fontWeight: 'bold' }}
                   />
-                </Box>
-                <Box sx={{ flex: '1 1 150px' }}>
+
+                </Grid>
+
+                <Grid size={{ xs: 6, sm: 3 }}>
+
                   <Typography variant="body2" color="text.secondary" gutterBottom>
                     Amount
                   </Typography>
                   <Typography variant="h6" fontWeight="bold" color="primary">
-                    {formatCurrency(payment.amount)}
+                    {formatCurrency(payment.totalAmount || payment.amount)}
                   </Typography>
-                </Box>
-                <Box sx={{ flex: '1 1 150px' }}>
+                </Grid>
+
+                <Grid size={{ xs: 6, sm: 3}}>
+
                   <Typography variant="body2" color="text.secondary" gutterBottom>
                     Status
                   </Typography>
                   <Chip 
                     label={payment.status}
-                    color="warning"
+                    color={overdue ? "error" : "warning"}
                     size="small"
                     sx={{ textTransform: 'capitalize', fontWeight: 'bold' }}
                   />
-                </Box>
-              </Box>
+                </Grid>
+
+                {payment.dueDate && (
+                  <Grid size={{ xs: 12 }} >
+
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Due Date
+                    </Typography>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      {overdue && <WarningIcon fontSize="small" color="error" />}
+                      <Typography 
+                        variant="body1" 
+                        fontWeight="bold"
+                        color={overdue ? 'error.main' : 'text.primary'}
+                      >
+                        {formatDate(payment.dueDate)}
+                      </Typography>
+                      {overdue && (
+                        <Chip 
+                          label="OVERDUE" 
+                          size="small" 
+                          color="error"
+                          sx={{ fontWeight: 'bold' }}
+                        />
+                      )}
+                    </Stack>
+                  </Grid>
+                )}
+              </Grid>
 
               <Divider />
 
-              {clientSecret && payment ? (
+              {/* Stripe Payment Form */}
+              {clientSecret ? (
                 <Elements
                   stripe={stripePromise}
                   options={{
@@ -537,6 +626,13 @@ export default function PaymentDetailPage() {
             </Stack>
           </CardContent>
         </Card>
+
+        {/* Security Notice */}
+        <Alert severity="info">
+          <Typography variant="body2">
+            Your payment is secured by Stripe. We never store your payment information.
+          </Typography>
+        </Alert>
       </Stack>
     </Container>
   );
