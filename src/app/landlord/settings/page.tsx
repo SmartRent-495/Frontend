@@ -80,9 +80,9 @@ export default function SettingsPage(): React.JSX.Element {
           </Box>
 
           <Grid container spacing={3}>
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <Grid container spacing={2}>
-                <Grid item xs={12} sm={6} md={12}>
+                <Grid size={{ xs: 12, sm: 6, md: 12 }}>
                   <Card>
                     <CardContent>
                       <Stack spacing={3} alignItems="center">
@@ -112,7 +112,7 @@ export default function SettingsPage(): React.JSX.Element {
                   </Card>
                 </Grid>
 
-                <Grid item xs={12} sm={6} md={12}>
+                <Grid size={{ xs: 12, sm: 6, md: 12 }}>
                   <Card>
                     <CardContent>
                       <Stack spacing={2}>
@@ -146,7 +146,7 @@ export default function SettingsPage(): React.JSX.Element {
               </Grid>
             </Grid>
 
-            <Grid item xs={12} md={8}>
+            <Grid size={{ xs: 12, sm: 6, md: 8 }}>
               <Stack spacing={3}>
                 <Card>
                   <CardContent>
@@ -201,7 +201,7 @@ export default function SettingsPage(): React.JSX.Element {
                       </Box>
 
                       <Grid container spacing={2}>
-                        <Grid item xs={12} sm={6}>
+                        <Grid size={{ xs: 12, sm: 6}}>
                           <TextField
                             fullWidth
                             label="First Name"
@@ -217,7 +217,7 @@ export default function SettingsPage(): React.JSX.Element {
                             }}
                           />
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        <Grid size={{ xs: 12, sm: 6 }}>
                           <TextField
                             fullWidth
                             label="Last Name"
@@ -233,7 +233,7 @@ export default function SettingsPage(): React.JSX.Element {
                             }}
                           />
                         </Grid>
-                        <Grid item xs={12}>
+                        <Grid size={{ xs: 12 }}>
                           <TextField
                             fullWidth
                             label="Email"
@@ -250,7 +250,7 @@ export default function SettingsPage(): React.JSX.Element {
                             }}
                           />
                         </Grid>
-                        <Grid item xs={12}>
+                        <Grid size={{ xs: 12 }}>
                           <TextField
                             fullWidth
                             label="Phone"
@@ -300,7 +300,7 @@ export default function SettingsPage(): React.JSX.Element {
                           Member Since
                         </Typography>
                         <Typography variant="body1" fontWeight={500}>
-                          {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
+                          {user?.createdAt ? new Date(String(user.createdAt)).toLocaleDateString() : 'N/A'}
                         </Typography>
                       </Box>
                       <Box>

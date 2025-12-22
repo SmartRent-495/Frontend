@@ -163,10 +163,11 @@ function CheckoutForm({ payment }: { payment: Payment }) {
               console.log("PaymentElement ready");
               setElementReady(true);
             }}
-            onLoadError={(error) => {
+            onLoadError={(error: unknown) => {
               console.error("PaymentElement load error:", error);
               setError("Failed to load payment form. Please refresh and try again.");
             }}
+
           />
         </Box>
 
