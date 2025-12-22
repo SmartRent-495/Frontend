@@ -67,10 +67,12 @@ export default function PropertiesPage(): React.JSX.Element {
         let availableProperties = data.filter((p: Property) => p.status === 'available');
         
         if (user?.landlordId) {
-          availableProperties = availableProperties.filter((p: Property) => 
-            (p.landlordId || p.landlord_id) === user.landlordId
+          const landlordIdNum = Number(user.landlordId);
+          availableProperties = availableProperties.filter(
+            (p: Property) => p.landlord_id === landlordIdNum
           );
         }
+
         
         setProperties(availableProperties);
       } catch (error) {
