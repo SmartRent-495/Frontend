@@ -5,9 +5,9 @@ const nextConfig = {
   reactStrictMode: true,
 
   // // Temporarily skip ESLint during builds on Vercel to avoid plugin/version crashes
-  // eslint: {
-  //   ignoreDuringBuilds: true,
-  // },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
 
   images: {
     remotePatterns: [
