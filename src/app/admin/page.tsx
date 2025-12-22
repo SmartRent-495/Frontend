@@ -108,8 +108,9 @@ export default function AdminDashboardPage(): React.JSX.Element {
         setLoading(true);
         setError(null);
         await load();
-      } catch (e: any) {
-        setError(e.message || 'Failed to load overview');
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Failed to load overview';
+        setError(message);
       } finally {
         setLoading(false);
       }
@@ -140,9 +141,10 @@ export default function AdminDashboardPage(): React.JSX.Element {
       const txt = JSON.stringify(d, null, 2);
 
       downloadFile(filename, txt, 'text/plain;charset=utf-8');
-    } catch (e: any) {
-      setError(e.message || 'Failed to download TXT');
-    } finally {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to load overview';
+      setError(message);
+    }finally {
       setBusyDownload(false);
     }
   };
@@ -168,8 +170,9 @@ export default function AdminDashboardPage(): React.JSX.Element {
 
       const filename = `smartrent-db-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.csv`;
       downloadFile(filename, csv, 'text/csv;charset=utf-8');
-    } catch (e: any) {
-      setError(e.message || 'Failed to download CSV');
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to load overview';
+      setError(message);
     } finally {
       setBusyDownload(false);
     }
@@ -221,7 +224,7 @@ export default function AdminDashboardPage(): React.JSX.Element {
 
       <Grid container spacing={2}>
         {counts.map((c) => (
-          <Grid key={c.label} item xs={12} sm={6} md={4}>
+          <Grid key={c.label} size={{ xs: 12, sm: 6, md: 4 }}>
             <Card variant="outlined" sx={{ height: '100%' }}>
               <CardContent>
                 <Stack spacing={1}>
