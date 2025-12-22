@@ -17,3 +17,4 @@ export interface AppUser  {
 
   [key: string]: unknown;
 }
+export type User = AppUser
