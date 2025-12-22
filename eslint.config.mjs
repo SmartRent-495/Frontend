@@ -65,11 +65,13 @@ export default [
 	{
 		settings: {
 			react: {
-				version: "detect",
+			version: "detect",
 			},
 		},
 		rules: {
 			"react/prop-types": "off",
+			"react/react-in-jsx-scope": "off",
+			"react/jsx-uses-react": "off",
 		},
 	},
 	...compat.extends("plugin:react-hooks/recommended"),

@@ -41,9 +41,7 @@ function normalizeRows(rows: any[]) {
   }));
 }
 
-/**
- * Build columns from union of keys across first N rows.
- */
+//Build columns from union of keys across first N rows.
 function buildColumns(rows: any[]) {
   const keySet = new Set<string>();
   const N = Math.min(rows?.length || 0, 50);
