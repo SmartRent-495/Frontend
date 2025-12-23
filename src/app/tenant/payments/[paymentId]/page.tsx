@@ -259,6 +259,7 @@ export default function PaymentDetailPage() {
       }
 
       const data = await res.json();
+      console.log("[debug] GET /payments/:paymentId response:", data);
       setPayment(data);
 
       if (data.status === "paid") {
@@ -275,7 +276,7 @@ export default function PaymentDetailPage() {
 
       // If we already have a clientSecret from a previous PaymentIntent, use it
       if (data.clientSecret && data.stripePaymentIntentId) {
-        console.log("Using existing PaymentIntent:", data.stripePaymentIntentId);
+        console.log("[debug] Using existing PaymentIntent:", data.stripePaymentIntentId, "clientSecret:", data.clientSecret?.substring?.(0,60));
         setClientSecret(data.clientSecret);
         setLoading(false);
         return;
@@ -320,6 +321,7 @@ export default function PaymentDetailPage() {
       }
 
       const payData = await payRes.json();
+      console.log("[debug] POST /payments/pay/:paymentId response:", payData);
       
       if (!payData.clientSecret) {
         throw new Error("No client secret returned from server");
@@ -337,6 +339,13 @@ export default function PaymentDetailPage() {
       setLoading(false);
     }
   };
+
+  // Debug: log clientSecret right before rendering Elements
+  useEffect(() => {
+    if (clientSecret) {
+      console.log('[debug] Rendering Elements with clientSecret (first 60 chars):', clientSecret.substring?.(0, 60));
+    }
+  }, [clientSecret]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
