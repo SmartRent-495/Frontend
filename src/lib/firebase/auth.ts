@@ -18,96 +18,146 @@ import type { User } from '@/types/user';
 
 const googleProvider = new GoogleAuthProvider();
 
+// Cache to prevent excessive backend calls
+let userCache: { user: User | null; timestamp: number; uid: string } | null = null;
+const CACHE_DURATION = 30000; // 30 seconds
+
+// Prevent concurrent requests
+let pendingRequest: Promise<User | null> | null = null;
+
 /**
  * Convert Firebase user to our User type
- * Fetches role and additional data from backend
+ * Fetches role and additional data from backend (with caching and deduplication)
  */
 export async function convertFirebaseUser(firebaseUser: FirebaseUser): Promise<User | null> {
   try {
-    // Get Firebase ID token
-    const token = await firebaseUser.getIdToken();
-
-    // Fetch user data from backend (which has the correct role)
-    // Retry logic for newly created users (registration might still be processing)
-    const maxRetries = 3;
-    const retryDelay = 500; // ms
-
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
-      try {
-        const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-        const response = await fetch(`${backendUrl}/auth/me`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (response.ok) {
-          const result = await response.json();
-          if (result.status === 'success' && result.data) {
-            const backendUser = result.data;
-
-            console.log('[convertFirebaseUser] User data fetched successfully:', {
-              email: backendUser.email,
-              role: backendUser.role,
-            });
-
-            return {
-              id: backendUser.id?.toString() || firebaseUser.uid,
-              username: backendUser.username || firebaseUser.email?.split('@')[0] || '',
-              email: backendUser.email || firebaseUser.email || '',
-              role: backendUser.role || 'tenant',
-
-              // ✅ NEW: include admin id (supports either admin_id or adminId returned by backend)
-              admin_id: backendUser.admin_id ?? backendUser.adminId ?? undefined,
-
-              first_name: backendUser.first_name || '',
-              last_name: backendUser.last_name || '',
-              phone: backendUser.phone || '',
-              avatar_url: backendUser.avatar_url || firebaseUser.photoURL || '',
-              created_at: backendUser.created_at || new Date().toISOString(),
-              name: `${backendUser.first_name || ''} ${backendUser.last_name || ''}`.trim() || firebaseUser.displayName || '',
-              avatar: backendUser.avatar_url || firebaseUser.photoURL || '',
-            };
-          }
-        } else if (response.status === 404 && attempt < maxRetries - 1) {
-          console.log(
-            `[convertFirebaseUser] User not found (attempt ${attempt + 1}/${maxRetries}), retrying in ${retryDelay}ms...`
-          );
-          await new Promise((resolve) => setTimeout(resolve, retryDelay));
-          continue;
-        }
-      } catch (backendError) {
-        console.log('[convertFirebaseUser] Backend call failed:', backendError);
-        if (attempt < maxRetries - 1) {
-          await new Promise((resolve) => setTimeout(resolve, retryDelay));
-          continue;
-        }
+    // Check cache first
+    if (userCache && userCache.uid === firebaseUser.uid) {
+      const age = Date.now() - userCache.timestamp;
+      if (age < CACHE_DURATION) {
+        console.log('[convertFirebaseUser] Returning cached user (age: ' + Math.round(age / 1000) + 's)');
+        return userCache.user;
       }
     }
 
-    // All retries failed - use Firebase data as fallback
-    console.log('[convertFirebaseUser] Backend not available after retries, using Firebase data only');
-    const nameParts = (firebaseUser.displayName || '').split(' ');
+    // If there's already a pending request for this user, wait for it
+    if (pendingRequest) {
+      console.log('[convertFirebaseUser] Waiting for pending request...');
+      return await pendingRequest;
+    }
 
-    return {
-      id: firebaseUser.uid,
-      username: firebaseUser.email?.split('@')[0] || '',
-      email: firebaseUser.email || '',
-      role: 'tenant', // Default role if backend unavailable
+    // Create new request
+    pendingRequest = (async () => {
+      try {
+        // Get Firebase ID token
+        const token = await firebaseUser.getIdToken();
 
-      // ✅ NEW: fallback has no admin_id
-      admin_id: undefined,
+        // Fetch user data from backend (which has the correct role)
+        // Retry logic for newly created users (registration might still be processing)
+        const maxRetries = 1; // Reduced from 3 to prevent rate limit spam
+        const retryDelay = 1000; // ms (increased to 1s)
 
-      first_name: nameParts[0] || '',
-      last_name: nameParts.slice(1).join(' ') || '',
-      phone: firebaseUser.phoneNumber || '',
-      avatar_url: firebaseUser.photoURL || '',
-      created_at: new Date().toISOString(),
-      name: firebaseUser.displayName || firebaseUser.email || '',
-      avatar: firebaseUser.photoURL || '',
-    };
+        for (let attempt = 0; attempt < maxRetries; attempt++) {
+          try {
+            const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+            const response = await fetch(`${backendUrl}/auth/me`, {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            });
+
+            if (response.ok) {
+              const result = await response.json();
+              if (result.status === 'success' && result.data) {
+                const backendUser = result.data;
+
+                console.log('[convertFirebaseUser] User data fetched successfully:', {
+                  email: backendUser.email,
+                  role: backendUser.role,
+                });
+
+                const user: User = {
+                  id: backendUser.id?.toString() || firebaseUser.uid,
+                  username: backendUser.username || firebaseUser.email?.split('@')[0] || '',
+                  email: backendUser.email || firebaseUser.email || '',
+                  role: backendUser.role || 'tenant',
+
+                  // ✅ NEW: include admin id (supports either admin_id or adminId returned by backend)
+                  admin_id: backendUser.admin_id ?? backendUser.adminId ?? undefined,
+
+                  first_name: backendUser.first_name || '',
+                  last_name: backendUser.last_name || '',
+                  phone: backendUser.phone || '',
+                  avatar_url: backendUser.avatar_url || firebaseUser.photoURL || '',
+                  created_at: backendUser.created_at || new Date().toISOString(),
+                  name: `${backendUser.first_name || ''} ${backendUser.last_name || ''}`.trim() || firebaseUser.displayName || '',
+                  avatar: backendUser.avatar_url || firebaseUser.photoURL || '',
+                };
+
+                // Update cache
+                userCache = {
+                  user,
+                  timestamp: Date.now(),
+                  uid: firebaseUser.uid,
+                };
+
+                return user;
+              }
+            } else if (response.status === 404 && attempt < maxRetries - 1) {
+              console.log(
+                `[convertFirebaseUser] User not found (attempt ${attempt + 1}/${maxRetries}), retrying in ${retryDelay}ms...`
+              );
+              await new Promise((resolve) => setTimeout(resolve, retryDelay));
+              continue;
+            }
+          } catch (backendError) {
+            console.log('[convertFirebaseUser] Backend call failed:', backendError);
+            if (attempt < maxRetries - 1) {
+              await new Promise((resolve) => setTimeout(resolve, retryDelay));
+              continue;
+            }
+          }
+        }
+
+        // All retries failed - use Firebase data as fallback
+        console.log('[convertFirebaseUser] Backend not available after retries, using Firebase data only');
+        const nameParts = (firebaseUser.displayName || '').split(' ');
+
+        const fallbackUser: User = {
+          id: firebaseUser.uid,
+          username: firebaseUser.email?.split('@')[0] || '',
+          email: firebaseUser.email || '',
+          role: 'tenant', // Default role if backend unavailable
+
+          // ✅ NEW: fallback has no admin_id
+          admin_id: undefined,
+
+          first_name: nameParts[0] || '',
+          last_name: nameParts.slice(1).join(' ') || '',
+          phone: firebaseUser.phoneNumber || '',
+          avatar_url: firebaseUser.photoURL || '',
+          created_at: new Date().toISOString(),
+          name: firebaseUser.displayName || firebaseUser.email || '',
+          avatar: firebaseUser.photoURL || '',
+        };
+
+        // Cache fallback too
+        userCache = {
+          user: fallbackUser,
+          timestamp: Date.now(),
+          uid: firebaseUser.uid,
+        };
+
+        return fallbackUser;
+      } finally {
+        pendingRequest = null;
+      }
+    })();
+
+    return await pendingRequest;
   } catch (error) {
     console.error('Error converting Firebase user:', error);
+    pendingRequest = null;
     return null;
   }
 }
