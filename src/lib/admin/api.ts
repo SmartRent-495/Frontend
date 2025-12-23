@@ -12,8 +12,10 @@ export type AdminCollection =
   | 'notifications'
   | 'payments';
 
+type HttpMethod = 'GET' | 'POST' | 'DELETE' | 'PATCH';
+
 async function authedFetch<T = any>(
-  method: 'GET' | 'POST' | 'DELETE',
+  method: HttpMethod,
   path: string,
   body?: any
 ): Promise<T> {
@@ -51,4 +53,8 @@ export const adminApi = {
   // Delete a document by doc id
   remove: (name: AdminCollection, id: string) =>
     authedFetch('DELETE', `/admin/collection/${name}/${encodeURIComponent(id)}`),
+
+  // Update fields on a document (merge)
+  update: (name: AdminCollection, id: string, payload: Record<string, any>) =>
+    authedFetch('PATCH', `/admin/collection/${name}/${encodeURIComponent(id)}`, payload),
 };

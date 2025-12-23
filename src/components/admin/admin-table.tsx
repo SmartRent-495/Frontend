@@ -41,7 +41,7 @@ function normalizeRows(rows: any[]) {
   }));
 }
 
-//Build columns from union of keys across first N rows.
+// Build columns from union of keys across first N rows.
 function buildColumns(rows: any[]) {
   const keySet = new Set<string>();
   const N = Math.min(rows?.length || 0, 50);
@@ -56,7 +56,7 @@ function buildColumns(rows: any[]) {
   return cols;
 }
 
-// Fields that should NOT be editable in Add Row form.
+// Fields that should NOT be editable in Add/Edit form.
 function isSystemField(field: string) {
   return (
     field === 'id' ||
@@ -66,8 +66,6 @@ function isSystemField(field: string) {
     field === 'updatedBy'
   );
 }
-
-
 
 function parseValue(raw: string) {
   const s = raw.trim();
@@ -80,20 +78,16 @@ function parseValue(raw: string) {
     return Number(s);
   }
 
-  if (
-    (s.startsWith('{') && s.endsWith('}')) ||
-    (s.startsWith('[') && s.endsWith(']'))
-  ) {
+  if ((s.startsWith('{') && s.endsWith('}')) || (s.startsWith('[') && s.endsWith(']'))) {
     try {
       return JSON.parse(s);
     } catch {
+      // fall through
     }
   }
 
   return raw;
 }
-
-
 
 function flattenObject(obj: any, prefix = '', out: Record<string, any> = {}) {
   if (obj === null || obj === undefined) {
@@ -135,14 +129,10 @@ function toCsv(rows: any[]) {
     return escaped;
   };
 
-  const lines = [
-    headers.join(','),
-    ...flatRows.map((r) => headers.map((h) => escape(r[h])).join(',')),
-  ];
+  const lines = [headers.join(','), ...flatRows.map((r) => headers.map((h) => escape(r[h])).join(','))];
 
   return lines.join('\n');
 }
-
 
 function downloadFile(filename: string, content: string, mime: string) {
   const blob = new Blob([content], { type: mime });
@@ -158,22 +148,12 @@ function downloadFile(filename: string, content: string, mime: string) {
   URL.revokeObjectURL(url);
 }
 
-
-
-
-
 export function AdminTable({
   collectionName,
   rows,
   onRefresh,
 }: {
-  collectionName:
-    | 'users'
-    | 'properties'
-    | 'leases'
-    | 'maintenance'
-    | 'notifications'
-    | 'payments';
+  collectionName: 'users' | 'properties' | 'leases' | 'maintenance' | 'notifications' | 'payments';
   rows: any[];
   onRefresh: () => Promise<void>;
 }) {
@@ -185,13 +165,18 @@ export function AdminTable({
   }, [columns]);
 
   const [openAdd, setOpenAdd] = React.useState(false);
+  const [openEdit, setOpenEdit] = React.useState(false);
+
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
   const [form, setForm] = React.useState<Record<string, string>>({});
-
   const [jsonFallback, setJsonFallback] = React.useState('{\n  \n}');
   const [useJsonFallback, setUseJsonFallback] = React.useState(false);
+
+  // Edit state
+  const [editId, setEditId] = React.useState<string>('');
+  const [editForm, setEditForm] = React.useState<Record<string, string>>({});
 
   React.useEffect(() => {
     const next: Record<string, string> = {};
@@ -237,10 +222,53 @@ export function AdminTable({
     }
   };
 
+  const startEdit = (row: any) => {
+    setError(null);
+    setEditId(row.id);
+
+    const next: Record<string, string> = {};
+    formFields.forEach((f) => {
+      const v = row?.[f];
+      next[f] =
+        v === undefined || v === null
+          ? ''
+          : typeof v === 'string'
+            ? v
+            : JSON.stringify(v);
+    });
+
+    setEditForm(next);
+    setOpenEdit(true);
+  };
+
+  const handleSaveEdit = async () => {
+    setError(null);
+    setBusy(true);
+
+    try {
+      const payload: any = {};
+
+      for (const key of formFields) {
+        const parsed = parseValue(editForm[key] ?? '');
+        if (parsed !== undefined) payload[key] = parsed;
+      }
+
+      await adminApi.update(collectionName, editId, payload);
+
+      setOpenEdit(false);
+      setEditId('');
+      setEditForm({});
+
+      await onRefresh();
+    } catch (e: any) {
+      setError(e.message || 'Failed to update row');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handleDelete = async (id: string) => {
-    const ok = window.confirm(
-      `Delete this row?\n\nCollection: ${collectionName}\nID: ${id}`
-    );
+    const ok = window.confirm(`Delete this row?\n\nCollection: ${collectionName}\nID: ${id}`);
     if (!ok) return;
 
     setError(null);
@@ -259,7 +287,6 @@ export function AdminTable({
     <Stack spacing={2}>
       {error ? <Alert severity="error">{error}</Alert> : null}
 
-   
       <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
         <Button variant="contained" onClick={() => setOpenAdd(true)}>
           Add Row
@@ -290,16 +317,12 @@ export function AdminTable({
         <Typography color="text.secondary">Rows: {safeRows.length}</Typography>
       </Stack>
 
-
       {!safeRows.length ? (
         <Box sx={{ p: 2 }}>
-          <Typography color="text.secondary">
-            No rows found.
-          </Typography>
+          <Typography color="text.secondary">No rows found.</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            Tip: If this collection is empty, the Add Row form can’t infer fields yet.
-            Use “Add Row” and enter JSON once to create the first document; after that,
-            the form will show real fields.
+            Tip: If this collection is empty, the Add Row form can’t infer fields yet. Use “Add Row” and enter JSON once
+            to create the first document; after that, the form will show real fields.
           </Typography>
         </Box>
       ) : (
@@ -307,7 +330,7 @@ export function AdminTable({
           <Table stickyHeader size="small">
             <TableHead>
               <TableRow>
-                <TableCell sx={{ fontWeight: 700, width: 120 }}>Actions</TableCell>
+                <TableCell sx={{ fontWeight: 700, width: 180 }}>Actions</TableCell>
 
                 {columns.map((c) => (
                   <TableCell key={c} sx={{ fontWeight: 700 }}>
@@ -321,15 +344,27 @@ export function AdminTable({
               {safeRows.slice(0, 200).map((row) => (
                 <TableRow key={row.id}>
                   <TableCell>
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      size="small"
-                      disabled={busy}
-                      onClick={() => handleDelete(row.id)}
-                    >
-                      Delete
-                    </Button>
+                    <Stack direction="row" spacing={1}>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        disabled={busy}
+                        onClick={() => startEdit(row)}
+                        sx={{ borderColor: '#444' }}
+                      >
+                        Edit
+                      </Button>
+
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        size="small"
+                        disabled={busy}
+                        onClick={() => handleDelete(row.id)}
+                      >
+                        Delete
+                      </Button>
+                    </Stack>
                   </TableCell>
 
                   {columns.map((c) => (
@@ -342,7 +377,6 @@ export function AdminTable({
         </TableContainer>
       )}
 
-      {/* Add Row dialog */}
       <Dialog open={openAdd} onClose={() => setOpenAdd(false)} maxWidth="md" fullWidth>
         <DialogTitle>Add row to: {collectionName}</DialogTitle>
 
@@ -350,8 +384,8 @@ export function AdminTable({
           {useJsonFallback ? (
             <>
               <Alert severity="info" sx={{ mb: 2 }}>
-                This collection has no existing rows, so we can’t infer fields yet.
-                Create the first document using JSON. After that, you’ll get a form with inputs.
+                This collection has no existing rows, so we can’t infer fields yet. Create the first document using JSON.
+                After that, you’ll get a form with inputs.
               </Alert>
 
               <TextField
@@ -366,8 +400,8 @@ export function AdminTable({
           ) : (
             <>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Enter values for the fields below. Leave empty to omit a field.
-                Numbers, true/false, and JSON objects/arrays will be auto-parsed.
+                Enter values for the fields below. Leave empty to omit a field. Numbers, true/false, and JSON
+                objects/arrays will be auto-parsed.
               </Typography>
 
               <Stack spacing={2}>
@@ -376,9 +410,7 @@ export function AdminTable({
                     key={field}
                     label={field}
                     value={form[field] ?? ''}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, [field]: e.target.value }))
-                    }
+                    onChange={(e) => setForm((prev) => ({ ...prev, [field]: e.target.value }))}
                     fullWidth
                   />
                 ))}
@@ -399,6 +431,43 @@ export function AdminTable({
           </Button>
           <Button onClick={handleAdd} variant="contained" disabled={busy}>
             Create
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={openEdit} onClose={() => setOpenEdit(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Edit row: {collectionName}</DialogTitle>
+
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Editing ID: <b>{editId}</b>. Leave empty to skip updating a field.
+          </Typography>
+
+          <Stack spacing={2}>
+            {formFields.map((field) => (
+              <TextField
+                key={field}
+                label={field}
+                value={editForm[field] ?? ''}
+                onChange={(e) => setEditForm((prev) => ({ ...prev, [field]: e.target.value }))}
+                fullWidth
+              />
+            ))}
+          </Stack>
+
+          {error ? (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {error}
+            </Alert>
+          ) : null}
+        </DialogContent>
+
+        <DialogActions>
+          <Button onClick={() => setOpenEdit(false)} disabled={busy}>
+            Cancel
+          </Button>
+          <Button onClick={handleSaveEdit} variant="contained" disabled={busy}>
+            Save Changes
           </Button>
         </DialogActions>
       </Dialog>
