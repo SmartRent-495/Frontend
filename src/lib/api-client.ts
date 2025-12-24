@@ -459,6 +459,5 @@ export const paymentsApi = {
     return response.data;
   },
 };
-
 // Export default api instance for custom requests
 export default api;

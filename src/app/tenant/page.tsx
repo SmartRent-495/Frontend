@@ -34,7 +34,7 @@ interface TenantStats {
   hasActiveLease: boolean;
   currentLease?: Lease;
   latestOpenMaintenance?: MaintenanceRequest;
-  nextPayment?: Payment; // 👈 ADD ONLY
+  nextPayment?: Payment; 
 
 }
 
@@ -126,7 +126,7 @@ export default function Page(): React.JSX.Element {
           hasActiveLease: !!activeLease,
           currentLease: activeLease,
           latestOpenMaintenance,
-          nextPayment, // 👈 ADD
+          nextPayment, 
         });
       } catch (error) {
         console.error('Failed to fetch tenant dashboard data:', error);
