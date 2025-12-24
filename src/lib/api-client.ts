@@ -133,15 +133,30 @@ export const propertiesApi = {
   getAll: async (filters?: PropertyFilters): Promise<Property[]> => {
     const response = await api.get<Property[]>('/properties', { params: filters });
     // Parse amenities from JSON string to array
-    return response.data.map((property) => ({
-      ...property,
-      amenities: typeof property.amenities === 'string' 
-        ? JSON.parse(property.amenities) 
-        : property.amenities,
-      utilities_included: Boolean(property.utilities_included),
-      pet_friendly: Boolean(property.pet_friendly),
-      parking_available: Boolean(property.parking_available),
-    }));
+    return response.data.map((property) => {
+      const amenities = typeof property.amenities === 'string' ? JSON.parse(property.amenities) : property.amenities;
+
+      // Normalize rent & deposit fields coming from backend (camelCase) into the frontend shape (snake_case)
+      const rent_amount = property.rent_amount ?? property.monthlyRent ?? property.monthly_rent ?? 0;
+      const security_deposit = property.security_deposit ?? property.securityDeposit ?? property.security_deposit ?? 0;
+
+      // Normalize other fields that may differ in naming
+      const property_type = property.property_type ?? property.propertyType;
+      const square_feet = property.square_feet ?? property.squareFeet ?? property.square_feet ?? null;
+
+      return {
+        ...property,
+        amenities,
+        utilities_included: Boolean(property.utilities_included),
+        pet_friendly: Boolean(property.pet_friendly),
+        parking_available: Boolean(property.parking_available),
+        // Normalized fields for UI convenience
+        rent_amount,
+        security_deposit,
+        property_type,
+        square_feet,
+      } as unknown as Property;
+    });
   },
 
   /**
@@ -150,15 +165,24 @@ export const propertiesApi = {
   getById: async (id: number): Promise<Property> => {
     const response = await api.get<Property>(`/properties/${id}`);
     const property = response.data;
+    const amenities = typeof property.amenities === 'string' ? JSON.parse(property.amenities) : property.amenities;
+
+    const rent_amount = property.rent_amount ?? property.monthlyRent ?? property.monthly_rent ?? 0;
+    const security_deposit = property.security_deposit ?? property.securityDeposit ?? property.security_deposit ?? 0;
+    const property_type = property.property_type ?? property.propertyType;
+    const square_feet = property.square_feet ?? property.squareFeet ?? property.square_feet ?? null;
+
     return {
       ...property,
-      amenities: typeof property.amenities === 'string' 
-        ? JSON.parse(property.amenities) 
-        : property.amenities,
+      amenities,
       utilities_included: Boolean(property.utilities_included),
       pet_friendly: Boolean(property.pet_friendly),
       parking_available: Boolean(property.parking_available),
-    };
+      rent_amount,
+      security_deposit,
+      property_type,
+      square_feet,
+    } as unknown as Property;
   },
 
   /**

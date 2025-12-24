@@ -149,6 +149,26 @@ export default function LandlordPaymentsPage() {
     }
   }, [selectedTenantId, selectedPropertyId]);
 
+  // Prefill rent and deposit when a property is selected
+  useEffect(() => {
+    if (!selectedPropertyId) return;
+
+    const prop = properties.find((p) => String(p.id) === String(selectedPropertyId));
+    if (!prop) return;
+
+    // Use normalized fields from API client: rent_amount and security_deposit
+    const rent = prop.rent_amount ?? prop.monthlyRent ?? '';
+    const deposit = prop.security_deposit ?? prop.securityDeposit ?? '';
+
+    // Only prefill if form fields are empty (don't override manual edits)
+    setRentAmount((prev) => (prev ? prev : String(rent)));
+
+    // Only set deposit if the UI allows it (no existing payments) and field is empty
+    if (showDepositField) {
+      setDepositAmount((prev) => (prev ? prev : String(deposit)));
+    }
+  }, [selectedPropertyId, properties, showDepositField]);
+
   const checkExistingPayments = async () => {
     setCheckingExisting(true);
     try {
