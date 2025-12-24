@@ -398,39 +398,64 @@ export const notificationsApi = {
 // ============================================================================
 // Payments API
 // ============================================================================
+// ============================================================================
+// Payments API (FIXED to match backend)
+// ============================================================================
 
 export const paymentsApi = {
   /**
-   * Get all payments with optional filters
+   * TENANT: Get my payments
    */
-  getAll: async (filters?: PaymentFilters): Promise<Payment[]> => {
-    const response = await api.get<Payment[]>('/payments', { params: filters });
+  getTenantPayments: async (): Promise<Payment[]> => {
+    const response = await api.get<{ payments: Payment[] }>('/payments/tenant');
+    return response.data.payments;
+  },
+
+  /**
+   * LANDLORD: Get payments for my properties
+   */
+  getLandlordPayments: async (): Promise<Payment[]> => {
+    const response = await api.get<{ payments: Payment[] }>('/payments/landlord');
+    return response.data.payments;
+  },
+
+  /**
+   * Get single payment by ID
+   */
+  getById: async (paymentId: string): Promise<Payment> => {
+    const response = await api.get<Payment>(`/payments/${paymentId}`);
     return response.data;
   },
 
   /**
-   * Get payment by ID
-   */
-  getById: async (id: number): Promise<Payment> => {
-    const response = await api.get<Payment>(`/payments/${id}`);
-    return response.data;
-  },
-
-  /**
-   * Create new payment
+   * LANDLORD: Create payment request
    */
   create: async (data: PaymentFormData) => {
-    const response = await api.post('/payments', data);
+    const response = await api.post('/payments/create', data);
     return response.data;
   },
 
   /**
-   * Process payment with Stripe
+   * TENANT: Start Stripe payment (get clientSecret)
    */
-  processStripePayment: async (paymentId: number, paymentMethodId: string) => {
-    const response = await api.post(`/payments/${paymentId}/process`, {
-      payment_method_id: paymentMethodId,
-    });
+  initiateStripePayment: async (paymentId: string) => {
+    const response = await api.post(`/payments/pay/${paymentId}`);
+    return response.data; // { clientSecret, paymentIntentId }
+  },
+
+  /**
+   * Sync payment status with Stripe
+   */
+  syncPayment: async (paymentId: string) => {
+    const response = await api.post(`/payments/sync/${paymentId}`);
+    return response.data;
+  },
+
+  /**
+   * LANDLORD: Cancel payment
+   */
+  cancel: async (paymentId: string) => {
+    const response = await api.delete(`/payments/${paymentId}`);
     return response.data;
   },
 };
