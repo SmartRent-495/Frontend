@@ -11,6 +11,12 @@ export interface Property {
   bedrooms: number;
   bathrooms: number;
   square_feet: number;
+  // CamelCase alternatives that may come from backend responses
+  monthlyRent?: number | string;
+  monthly_rent?: number | string;
+  securityDeposit?: number | string;
+  propertyType?: Property['property_type'];
+  squareFeet?: number | string;
   rent_amount: number;
   security_deposit?: number;
   utilities_included: boolean;

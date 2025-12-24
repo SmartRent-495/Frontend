@@ -76,6 +76,12 @@ interface Property {
   id: string;
   title: string;
   address: string;
+  // Normalized fields from API client (optional)
+  rent_amount?: number | string;
+  security_deposit?: number | string;
+  // Backwards-compatible fields (some responses may use these keys)
+  monthlyRent?: number | string;
+  securityDeposit?: number | string;
 }
 
 interface Stats {
