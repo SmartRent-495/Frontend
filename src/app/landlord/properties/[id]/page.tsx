@@ -22,6 +22,7 @@ import type { Property } from '@/types';
 export default function Page(): React.JSX.Element {
   const params = useParams();
   const router = useRouter();
+  // Normalize the route id to a string (works for numeric or UUID ids)
   const propertyId = String((params as any).id || '');
 
   const [property, setProperty] = React.useState<Property | null>(null);
@@ -31,7 +32,7 @@ export default function Page(): React.JSX.Element {
     async function fetchProperty() {
       try {
         setLoading(true);
-        const data = await propertiesApi.getById(propertyId);
+        const data = await propertiesApi.getById(propertyId as string);
         setProperty(data);
       } catch (error) {
         console.error('Failed to fetch property:', error);
@@ -148,7 +149,38 @@ export default function Page(): React.JSX.Element {
                 {property.city}, {property.state} {property.zip_code}
               </Typography>
 
+              {/* Extra landlord-facing info */}
+              {property.landlord_name && (
+                <Typography variant="body2" color="text.secondary">
+                  Landlord: {property.landlord_name}
+                </Typography>
+              )}
+              {property.landlord_email && (
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  Contact: {property.landlord_email}
+                </Typography>
+              )}
+
               <Divider sx={{ my: 2 }} />
+
+              <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
+                <Button
+                  component={RouterLink}
+                  href={`${paths.landlord.payments}?propertyId=${property.id}`}
+                  variant="outlined"
+                  size="small"
+                >
+                  Create Payment Request
+                </Button>
+                <Button
+                  component={RouterLink}
+                  href={`${paths.landlord.leases}?propertyId=${property.id}`}
+                  variant="outlined"
+                  size="small"
+                >
+                  View Leases
+                </Button>
+              </Stack>
 
               <Typography variant="h4" color="primary" gutterBottom>
                 ${property.rent_amount}/month
