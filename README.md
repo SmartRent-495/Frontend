@@ -2,6 +2,13 @@
 
 Next.js web application for the SmartRent property management platform. Built with TypeScript, App Router, and Material UI.
 
+## Overview
+
+SmartRent is a comprehensive property management platform with three distinct user roles:
+- **Landlords**: Manage properties, create leases, track payments, and handle maintenance requests
+- **Tenants**: View properties, pay rent, submit maintenance requests, and manage their lease
+- **Admins**: Full system oversight including user management, all properties, leases, and payments
+
 ## Prerequisites
 
 - Node.js v18 or higher
@@ -69,15 +76,27 @@ Frontend/
 │   │   │   ├── payments/       # Payment management
 │   │   │   ├── maintenance/    # Maintenance requests
 │   │   │   └── tenants/        # Tenant management
-│   │   └── tenant/             # Tenant dashboard and features
-│   │       ├── payments/       # Rent payment and history
-│   │       ├── maintenance/    # Submit maintenance requests
-│   │       └── properties/     # View assigned properties
+│   │   ├── tenant/             # Tenant dashboard and features
+│   │   │   ├── payments/       # Rent payment and history
+│   │   │   ├── maintenance/    # Submit maintenance requests
+│   │   │   └── properties/     # View assigned properties
+│   │   └── admin/              # Admin dashboard and features
+│   │       ├── users/          # User management
+│   │       ├── properties/     # Property oversight
+│   │       ├── leases/         # Lease management
+│   │       ├── maintenance/    # Maintenance requests overview
+│   │       ├── notifications/  # Notifications management
+│   │       └── payments/       # Payment tracking
 │   ├── components/             # Reusable UI components
+│   │   ├── auth/               # Auth-related components
+│   │   ├── landlord/           # Landlord-specific components
+│   │   ├── tenant/             # Tenant-specific components
+│   │   └── admin/              # Admin-specific components
 │   ├── contexts/               # React Context providers
 │   ├── hooks/                  # Custom React hooks
 │   ├── lib/                    # Utilities and API client
 │   │   ├── api-client.ts       # Axios-based API wrapper
+│   │   ├── admin/              # Admin-specific API client
 │   │   └── firebase/           # Firebase initialization
 │   ├── styles/                 # Global styles and theme
 │   └── types/                  # TypeScript type definitions
@@ -90,20 +109,35 @@ Frontend/
 ## Key Routes
 
 ### Landlord
+- `/landlord` - Landlord dashboard
 - `/landlord/properties` - Property list
 - `/landlord/properties/create` - Add new property
 - `/landlord/properties/[id]` - Property details (view, edit, delete)
 - `/landlord/properties/[id]/edit` - Edit property form
 - `/landlord/leases` - Lease management
+- `/landlord/leases/new` - Create new lease
 - `/landlord/leases/[id]` - Lease details
 - `/landlord/payments` - Payment tracking
 - `/landlord/maintenance` - Maintenance request dashboard
+- `/landlord/tenants` - Tenant management
+- `/landlord/settings` - Landlord settings
 
 ### Tenant
+- `/tenant` - Tenant dashboard
 - `/tenant/properties` - View assigned properties
+- `/tenant/lease` - View current lease
 - `/tenant/payments` - Rent payment and history
 - `/tenant/payments/[paymentId]` - Payment detail and Stripe checkout
 - `/tenant/maintenance` - Submit and track maintenance requests
+
+### Admin
+- `/admin` - Admin dashboard and system overview
+- `/admin/users` - User management (view all users, roles, status)
+- `/admin/properties` - Property oversight (all properties across landlords)
+- `/admin/leases` - Lease management (view all leases)
+- `/admin/maintenance` - Maintenance requests overview
+- `/admin/notifications` - Notifications management
+- `/admin/payments` - Payment tracking (all transactions)
 
 ## Available Scripts
 
@@ -117,18 +151,61 @@ npm test             # Run tests (if configured)
 
 ## Key Features
 
-### Property Management
-
+### Property Management (Landlord)
 - Create, edit, and delete properties
 - Upload property images
 - Track property status and availability
 - View detailed property information
+
+### Lease Management (Landlord)
+- Create and manage leases
+- Track lease status (pending, active, expired, terminated)
+- View lease details with property and tenant information
+- Monitor lease terms and payment schedules
+
+### Payment Processing (Tenant)
+- Stripe integration for secure rent payments
+- View payment history
+- Track upcoming and overdue payments
+- Payment receipt generation
+
+### Maintenance Requests (Tenant & Landlord)
+- Submit maintenance requests with descriptions and priority
+- Track request status (pending, in-progress, completed)
+- Landlord can view and manage all requests
+- Tenant can view their submitted requests
+
+### Admin Panel
+- System-wide dashboard with key metrics
+- User management (view all users, roles, and status)
+- Property oversight across all landlords
+- Lease management and monitoring
+- Maintenance request overview
+- Payment tracking across the platform
+- Notification management
+- Database export functionality (CSV format)
 
 ## API Integration
 
 The frontend communicates with the backend through `src/lib/api-client.ts`, which uses Axios with automatic Firebase token injection. All requests require authentication except for `/auth/login` and `/auth/register`.
 
 API base URL is configured via `NEXT_PUBLIC_API_URL`. Ensure the backend is running before starting the frontend.
+
+### Role-Based Access Control
+
+The application implements three distinct user roles:
+
+- **Landlord**: Can manage their own properties, leases, tenants, and view payments/maintenance requests
+- **Tenant**: Can view assigned properties, pay rent, submit maintenance requests, and manage their lease
+- **Admin**: Has full system access including user management, all properties, leases, payments, and maintenance requests
+
+### Admin API
+
+Admins have access to additional endpoints through `src/lib/admin/api.ts`:
+- `adminApi.collection(name)` - Fetch all documents from a Firestore collection
+- `adminApi.updateDocument(collection, id, data)` - Update any document
+- `adminApi.deleteDocument(collection, id)` - Delete any document
+- `adminApi.exportDatabase()` - Export entire database as CSV
 
 ## Firebase Setup
 
