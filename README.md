@@ -115,6 +115,30 @@ npm run lint         # Run ESLint
 npm test             # Run tests (if configured)
 ```
 
+## Key Features
+
+### Lease Agreement PDF Generation
+
+The lease detail page (`/landlord/leases/[id]`) includes automatic PDF generation for lease agreements. This feature:
+
+- Generates a comprehensive lease agreement PDF with all lease details
+- Includes property information, tenant and landlord details, terms and conditions
+- Can be downloaded directly from the lease detail page
+- Uses jsPDF library for client-side PDF generation
+- PDF includes all relevant information: monthly rent, security deposit, lease duration, payment terms, utilities, and legal clauses
+
+**To download a lease agreement:**
+1. Navigate to `/landlord/leases/[id]`
+2. Click the "Download Lease Agreement PDF" button
+3. PDF will be generated and downloaded automatically
+
+### Property Management
+
+- Create, edit, and delete properties
+- Upload property images
+- Track property status and availability
+- View detailed property information
+
 ## API Integration
 
 The frontend communicates with the backend through `src/lib/api-client.ts`, which uses Axios with automatic Firebase token injection. All requests require authentication except for `/auth/login` and `/auth/register`.
