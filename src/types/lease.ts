@@ -1,36 +1,34 @@
 export interface Lease {
-  id: number;
-  property_id: number;
-  tenant_id: number;
-  landlord_id: number;
-  start_date: string;
-  end_date: string;
-  monthly_rent: number;
-  security_deposit: number;
-  utilities_cost: number;
-  payment_due_day: number;
+  id: string;
+  propertyId: string;
+  tenantId: string;
+  landlordId: string;
+  startDate: string;
+  endDate: string;
+  monthlyRent: number;
+  securityDeposit: number;
+  utilitiesCost: number;
+  paymentDueDay: number;
   status: 'pending' | 'active' | 'expired' | 'terminated';
-  lease_document_url?: string;
+  leaseDocumentUrl?: string;
   notes?: string;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
   
   // Joined fields
-  property_title?: string;
-  property_address?: string;
-  property_city?: string;
-  tenant_name?: string;
-  tenant_email?: string;
-  tenant_phone?: string;
-  tenant_first_name?: string;
-  tenant_last_name?: string;
-  landlord_name?: string;
-  landlord_email?: string;
+  propertyTitle?: string;
+  propertyAddress?: string;
+  propertyCity?: string;
+  tenantName?: string;
+  tenantEmail?: string;
+  tenantPhone?: string;
+  landlordName?: string;
+  landlordEmail?: string;
 }
 
 export interface LeaseFormData {
-  property_id: number;
-  tenant_id: number;
+  property_id: string;
+  tenant_id: string;
   start_date: string;
   end_date: string;
   monthly_rent: number;

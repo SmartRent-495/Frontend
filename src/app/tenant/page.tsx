@@ -149,10 +149,10 @@ export default function Page(): React.JSX.Element {
   const lease = stats.currentLease as any;
 
   const propertyLabel =
-    safeText(lease?.property_address, '') ||
-    (lease?.property_id ? `Property ID: ${safeText(lease.property_id)}` : '—');
+    safeText(lease?.propertyAddress, '') ||
+    (lease?.propertyId ? `Property ID: ${safeText(lease.propertyId)}` : '—');
 
-  const monthlyRent = lease?.monthly_rent ?? lease?.rent ?? null;
+  const monthlyRent = lease?.monthlyRent ?? lease?.rent ?? null;
 
   const showPaymentAlert = stats.paymentsDueAmount > 0;
   const showMaintenanceAlert = stats.openMaintenanceRequests > 0;

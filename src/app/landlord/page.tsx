@@ -100,7 +100,7 @@ React.useEffect(() => {
 
       // Set recent leases (last 5)
       const sortedLeases = leases
-        .sort((a: Lease, b: Lease) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime())
+        .sort((a: Lease, b: Lease) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
         .slice(0, 5);
       setRecentLeases(sortedLeases);
 
@@ -265,13 +265,13 @@ React.useEffect(() => {
                       <Stack direction="row" justifyContent="space-between" alignItems="center">
                         <Box>
                           <Typography variant="subtitle2">
-                            {lease.tenant_name || `Tenant ID: ${lease.tenant_id}`}
+                            {lease.tenantName || `Tenant ID: ${lease.tenantId}`}
                           </Typography>
                           <Typography variant="body2" color="text.secondary">
-                            {lease.property_address || `Property ID: ${lease.property_id}`}
+                            {lease.propertyAddress || `Property ID: ${lease.propertyId}`}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            ${lease.monthly_rent}/month
+                            ${lease.monthlyRent}/month
                           </Typography>
                         </Box>
                         <Chip

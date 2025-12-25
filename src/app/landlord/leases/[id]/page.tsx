@@ -156,14 +156,14 @@ export default function LeaseDetailPage() {
                   </Typography>
                   <Stack spacing={1} sx={{ pl: 4 }}>
                     <Typography variant="body1" fontWeight="medium">
-                      {lease.property_title || 'Property'}
+                      {lease.propertyTitle || 'Property'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {lease.property_address || 'No address'}
+                      {lease.propertyAddress || 'No address'}
                     </Typography>
-                    {lease.property_city && (
+                    {lease.propertyCity && (
                       <Typography variant="body2" color="text.secondary">
-                        {lease.property_city}
+                        {lease.propertyCity}
                       </Typography>
                     )}
                   </Stack>
@@ -178,21 +178,21 @@ export default function LeaseDetailPage() {
                   </Typography>
                   <Stack spacing={1} sx={{ pl: 4 }}>
                     <Typography variant="body1" fontWeight="medium">
-                      {lease.tenant_name || lease.tenant_first_name + ' ' + lease.tenant_last_name || 'Tenant'}
+                      {lease.tenantName || 'Tenant'}
                     </Typography>
-                    {lease.tenant_email && (
+                    {lease.tenantEmail && (
                       <Box display="flex" alignItems="center" gap={1}>
                         <EmailIcon fontSize="small" />
                         <Typography variant="body2" color="text.secondary">
-                          {lease.tenant_email}
+                          {lease.tenantEmail}
                         </Typography>
                       </Box>
                     )}
-                    {lease.tenant_phone && (
+                    {lease.tenantPhone && (
                       <Box display="flex" alignItems="center" gap={1}>
                         <PhoneIcon fontSize="small" />
                         <Typography variant="body2" color="text.secondary">
-                          {lease.tenant_phone}
+                          {lease.tenantPhone}
                         </Typography>
                       </Box>
                     )}
@@ -202,7 +202,7 @@ export default function LeaseDetailPage() {
                 <Divider sx={{ mb: 3 }} />
 
                 {/* Landlord Details */}
-                {lease.landlord_name && (
+                {lease.landlordName && (
                   <>
                     <Box mb={3}>
                       <Typography variant="h6" gutterBottom color="primary">
@@ -210,13 +210,13 @@ export default function LeaseDetailPage() {
                       </Typography>
                       <Stack spacing={1} sx={{ pl: 4 }}>
                         <Typography variant="body1" fontWeight="medium">
-                          {lease.landlord_name}
+                          {lease.landlordName}
                         </Typography>
-                        {lease.landlord_email && (
+                        {lease.landlordEmail && (
                           <Box display="flex" alignItems="center" gap={1}>
                             <EmailIcon fontSize="small" />
                             <Typography variant="body2" color="text.secondary">
-                              {lease.landlord_email}
+                              {lease.landlordEmail}
                             </Typography>
                           </Box>
                         )}
@@ -237,7 +237,7 @@ export default function LeaseDetailPage() {
                         Start Date
                       </Typography>
                       <Typography variant="body1" fontWeight="medium">
-                        {formatDate(lease.start_date)}
+                        {formatDate(lease.startDate)}
                       </Typography>
                     </Box>
                     <Box display="flex" justifyContent="space-between">
@@ -245,7 +245,7 @@ export default function LeaseDetailPage() {
                         End Date
                       </Typography>
                       <Typography variant="body1" fontWeight="medium">
-                        {formatDate(lease.end_date)}
+                        {formatDate(lease.endDate)}
                       </Typography>
                     </Box>
                     <Box display="flex" justifyContent="space-between">
@@ -253,7 +253,7 @@ export default function LeaseDetailPage() {
                         Payment Due Day
                       </Typography>
                       <Typography variant="body1" fontWeight="medium">
-                        {lease.payment_due_day || 1} of each month
+                        {lease.paymentDueDay || 1} of each month
                       </Typography>
                     </Box>
                   </Stack>
@@ -293,7 +293,7 @@ export default function LeaseDetailPage() {
                       Monthly Rent
                     </Typography>
                     <Typography variant="h4" color="primary" fontWeight="bold">
-                      {formatCurrency(lease.monthly_rent)}
+                      {formatCurrency(lease.monthlyRent)}
                     </Typography>
                   </Box>
 
@@ -304,11 +304,11 @@ export default function LeaseDetailPage() {
                       Security Deposit
                     </Typography>
                     <Typography variant="h5" fontWeight="medium">
-                      {formatCurrency(lease.security_deposit)}
+                      {formatCurrency(lease.securityDeposit)}
                     </Typography>
                   </Box>
 
-                  {lease.utilities_cost > 0 && (
+                  {lease.utilitiesCost > 0 && (
                     <>
                       <Divider />
                       <Box>
@@ -316,7 +316,7 @@ export default function LeaseDetailPage() {
                           Utilities Cost
                         </Typography>
                         <Typography variant="h5" fontWeight="medium">
-                          {formatCurrency(lease.utilities_cost)}
+                          {formatCurrency(lease.utilitiesCost)}
                         </Typography>
                       </Box>
                     </>
@@ -329,7 +329,7 @@ export default function LeaseDetailPage() {
                       Total Monthly Payment
                     </Typography>
                     <Typography variant="h5" color="primary" fontWeight="bold">
-                      {formatCurrency((lease.monthly_rent || 0) + (lease.utilities_cost || 0))}
+                      {formatCurrency((lease.monthlyRent || 0) + (lease.utilitiesCost || 0))}
                     </Typography>
                   </Box>
                 </Stack>
