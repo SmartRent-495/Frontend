@@ -22,7 +22,7 @@ import type { Property } from '@/types';
 export default function Page(): React.JSX.Element {
   const params = useParams();
   const router = useRouter();
-  const propertyId = Number(params.id);
+  const propertyId = String((params as any).id || '');
 
   const [property, setProperty] = React.useState<Property | null>(null);
   const [loading, setLoading] = React.useState(true);

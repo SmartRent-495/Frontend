@@ -162,28 +162,25 @@ export const propertiesApi = {
   /**
    * Get property by ID
    */
-  getById: async (id: number): Promise<Property> => {
-    const response = await api.get<Property>(`/properties/${id}`);
-    const property = response.data;
-    const amenities = typeof property.amenities === 'string' ? JSON.parse(property.amenities) : property.amenities;
 
-    const rent_amount = property.rent_amount ?? property.monthlyRent ?? property.monthly_rent ?? 0;
-    const security_deposit = property.security_deposit ?? property.securityDeposit ?? property.security_deposit ?? 0;
-    const property_type = property.property_type ?? property.propertyType;
-    const square_feet = property.square_feet ?? property.squareFeet ?? property.square_feet ?? null;
+  getById: async (id: string): Promise<Property> => {
+  if (!id) {
+    throw new Error('Property id is required');
+  }
 
-    return {
-      ...property,
-      amenities,
-      utilities_included: Boolean(property.utilities_included),
-      pet_friendly: Boolean(property.pet_friendly),
-      parking_available: Boolean(property.parking_available),
-      rent_amount,
-      security_deposit,
-      property_type,
-      square_feet,
-    } as unknown as Property;
-  },
+  const response = await api.get<Property>(`/properties/${encodeURIComponent(id)}`);
+  const property = response.data;
+
+  return {
+    ...property,
+    amenities: typeof property.amenities === 'string'
+      ? JSON.parse(property.amenities)
+      : property.amenities,
+    utilities_included: Boolean(property.utilities_included),
+    pet_friendly: Boolean(property.pet_friendly),
+    parking_available: Boolean(property.parking_available),
+  };
+},
 
   /**
    * Create new property (landlord only)
