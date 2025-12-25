@@ -385,4 +385,13 @@ This project is licensed under the MIT License.
 
 ---
 
+## Contact Details
+| Name | Email | 
+|------|-------|
+| Zeeshan Imran | eng.zeeshanimran@gmail.com | 
+| Miguel Mbabazi | miguelmbabatunga31@gmail.com | 
+| Mahlet Bekele | mahlet.bizwoin@gmail.com |
+
+
+
 **Built by Team SmartRent**
