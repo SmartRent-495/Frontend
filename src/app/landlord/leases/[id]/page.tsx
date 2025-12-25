@@ -14,19 +14,15 @@ import {
   Grid,
   Divider,
   CircularProgress,
-  Alert,
 } from '@mui/material';
 import {
   CalendarToday as CalendarIcon,
   Person as PersonIcon,
   Home as HomeIcon,
   AttachMoney as MoneyIcon,
-  Description as DescriptionIcon,
-  Download as DownloadIcon,
   Email as EmailIcon,
   Phone as PhoneIcon,
 } from '@mui/icons-material';
-import { jsPDF } from 'jspdf';
 import { leasesApi } from '@/lib/api-client';
 import { paths } from '@/paths';
 import type { Lease } from '@/types/lease';
@@ -38,256 +34,89 @@ export default function LeaseDetailPage() {
 
   const [lease, setLease] = React.useState<Lease | null>(null);
   const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
-  const [downloading, setDownloading] = React.useState(false);
 
   React.useEffect(() => {
     async function load() {
       try {
         setLoading(true);
-        const data = await leasesApi.getById(leaseId as any);
-        console.log('Loaded lease data:', data);
+        const data = await leasesApi.getById(leaseId);
         setLease(data);
-      } catch (err) {
-        console.error('Failed to load lease', err);
-        setError('Failed to load lease');
+      } catch (error_) {
+        console.error('Failed to load lease', error_);
       } finally {
         setLoading(false);
       }
     }
-    if (leaseId) load();
+    if (leaseId) {
+      load();
+    }
   }, [leaseId]);
 
-  const formatDate = (d: string | undefined) => {
-    if (!d) return 'N/A';
-    try {
-      return new Date(d).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      });
-    } catch {
-      return 'Invalid Date';
-    }
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
   };
 
-  const formatCurrency = (n: number | undefined) => {
-    if (!n && n !== 0) return '$0.00';
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
+  const formatCurrency = (amount: number | undefined) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount || 0);
   };
 
-  const getStatusColor = (status: string): 'success' | 'warning' | 'default' | 'error' => {
+  const getStatusColor = (status: string | undefined): 'success' | 'warning' | 'default' | 'error' => {
     switch (status) {
-      case 'active':
+      case 'active': {
         return 'success';
-      case 'pending':
+      }
+      case 'pending': {
         return 'warning';
-      case 'expired':
+      }
+      case 'expired': {
         return 'default';
-      case 'terminated':
+      }
+      case 'terminated': {
         return 'error';
-      default:
+      }
+      default: {
         return 'default';
-    }
-  };
-
-  const generatePDF = () => {
-    if (!lease) return;
-
-    setDownloading(true);
-    try {
-      const doc = new jsPDF();
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
-      const margin = 20;
-      let yPos = margin;
-
-      // Header
-      doc.setFontSize(20);
-      doc.setFont('helvetica', 'bold');
-      doc.text('RESIDENTIAL LEASE AGREEMENT', pageWidth / 2, yPos, { align: 'center' });
-      yPos += 15;
-
-      // Date generated
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth / 2, yPos, { align: 'center' });
-      yPos += 15;
-
-      // Parties Section
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.text('PARTIES TO THIS AGREEMENT', margin, yPos);
-      yPos += 10;
-
-      doc.setFontSize(11);
-      doc.setFont('helvetica', 'normal');
-      doc.text('Landlord:', margin, yPos);
-      doc.setFont('helvetica', 'bold');
-      doc.text(lease.landlord_name || 'N/A', margin + 30, yPos);
-      yPos += 7;
-      doc.setFont('helvetica', 'normal');
-      doc.text('Email:', margin, yPos);
-      doc.text(lease.landlord_email || 'N/A', margin + 30, yPos);
-      yPos += 12;
-
-      doc.text('Tenant:', margin, yPos);
-      doc.setFont('helvetica', 'bold');
-      doc.text(lease.tenant_name || `${lease.tenant_first_name || ''} ${lease.tenant_last_name || ''}`.trim() || 'N/A', margin + 30, yPos);
-      yPos += 7;
-      doc.setFont('helvetica', 'normal');
-      doc.text('Email:', margin, yPos);
-      doc.text(lease.tenant_email || 'N/A', margin + 30, yPos);
-      yPos += 7;
-      if (lease.tenant_phone) {
-        doc.text('Phone:', margin, yPos);
-        doc.text(lease.tenant_phone, margin + 30, yPos);
-        yPos += 7;
       }
-      yPos += 8;
-
-      // Property Section
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.text('PROPERTY DETAILS', margin, yPos);
-      yPos += 10;
-
-      doc.setFontSize(11);
-      doc.setFont('helvetica', 'normal');
-      doc.text('Property Address:', margin, yPos);
-      yPos += 7;
-      doc.setFont('helvetica', 'bold');
-      const address = `${lease.property_address || 'N/A'}${lease.property_city ? ', ' + lease.property_city : ''}`;
-      doc.text(address, margin + 5, yPos);
-      yPos += 7;
-      doc.setFont('helvetica', 'normal');
-      if (lease.property_title) {
-        doc.text(`Title: ${lease.property_title}`, margin + 5, yPos);
-        yPos += 7;
-      }
-      yPos += 8;
-
-      // Lease Terms Section
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.text('LEASE TERMS', margin, yPos);
-      yPos += 10;
-
-      doc.setFontSize(11);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`Lease Period: ${formatDate(lease.start_date)} to ${formatDate(lease.end_date)}`, margin, yPos);
-      yPos += 8;
-      doc.text(`Status: ${(lease.status || 'N/A').toUpperCase()}`, margin, yPos);
-      yPos += 8;
-      doc.text(`Monthly Rent: ${formatCurrency(lease.monthly_rent)}`, margin, yPos);
-      yPos += 8;
-      doc.text(`Security Deposit: ${formatCurrency(lease.security_deposit)}`, margin, yPos);
-      yPos += 8;
-      if (lease.utilities_cost) {
-        doc.text(`Utilities Cost: ${formatCurrency(lease.utilities_cost)}`, margin, yPos);
-        yPos += 8;
-      }
-      doc.text(`Payment Due Day: ${lease.payment_due_day || 'N/A'} of each month`, margin, yPos);
-      yPos += 12;
-
-      // Terms and Conditions
-      if (yPos > pageHeight - 60) {
-        doc.addPage();
-        yPos = margin;
-      }
-
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.text('TERMS AND CONDITIONS', margin, yPos);
-      yPos += 10;
-
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      const terms = [
-        '1. The Tenant agrees to pay rent on or before the due date each month.',
-        '2. The security deposit will be held for the duration of the lease and returned within 30 days of lease termination, subject to property condition.',
-        '3. The Tenant agrees to maintain the property in good condition and report any maintenance issues promptly.',
-        '4. The Landlord agrees to maintain the property in habitable condition and respond to maintenance requests in a timely manner.',
-        '5. Either party may terminate this lease with 30 days written notice, subject to the terms of this agreement.',
-        '6. The Tenant shall not sublease the property without written consent from the Landlord.',
-        '7. This lease is governed by the laws of the applicable jurisdiction.',
-      ];
-
-      terms.forEach((term) => {
-        if (yPos > pageHeight - 20) {
-          doc.addPage();
-          yPos = margin;
-        }
-        const lines = doc.splitTextToSize(term, pageWidth - 2 * margin);
-        doc.text(lines, margin, yPos);
-        yPos += lines.length * 7;
-      });
-
-      // Additional Notes
-      if (lease.notes) {
-        yPos += 5;
-        if (yPos > pageHeight - 40) {
-          doc.addPage();
-          yPos = margin;
-        }
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.text('ADDITIONAL NOTES', margin, yPos);
-        yPos += 8;
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'normal');
-        const noteLines = doc.splitTextToSize(lease.notes, pageWidth - 2 * margin);
-        doc.text(noteLines, margin, yPos);
-        yPos += noteLines.length * 7 + 10;
-      }
-
-      // Signatures Section
-      if (yPos > pageHeight - 60) {
-        doc.addPage();
-        yPos = margin;
-      }
-
-      yPos = pageHeight - 50;
-      doc.setFontSize(11);
-      doc.setFont('helvetica', 'bold');
-      doc.text('SIGNATURES', margin, yPos);
-      yPos += 15;
-
-      doc.setFont('helvetica', 'normal');
-      doc.text('Landlord Signature: ____________________________', margin, yPos);
-      doc.text('Date: __________', pageWidth - margin - 50, yPos);
-      yPos += 15;
-      doc.text('Tenant Signature: ____________________________', margin, yPos);
-      doc.text('Date: __________', pageWidth - margin - 50, yPos);
-
-      // Save PDF
-      const fileName = `Lease_Agreement_${lease.property_address?.replace(/\s+/g, '_') || lease.id}_${new Date().getTime()}.pdf`;
-      doc.save(fileName);
-    } catch (err) {
-      console.error('PDF generation failed:', err);
-      alert('Failed to generate PDF');
-    } finally {
-      setDownloading(false);
     }
   };
 
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-        <CircularProgress />
+        <Stack spacing={2} alignItems="center">
+          <CircularProgress size={60} />
+          <Typography variant="body1" color="text.secondary">
+            Loading lease details...
+          </Typography>
+        </Stack>
       </Box>
     );
   }
 
-  if (error || !lease) {
+  if (!lease) {
     return (
       <Container sx={{ py: 4 }}>
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error || 'Lease not found'}
-        </Alert>
-        <Button onClick={() => router.push(paths.landlord.leases)} variant="contained">
-          Back to Leases
-        </Button>
+        <Card sx={{ p: 4 }}>
+          <CardContent>
+            <Typography variant="h6" gutterBottom>
+              Lease not found
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              The requested lease could not be found or you don't have permission to view it.
+            </Typography>
+            <Button onClick={() => router.push(paths.landlord.leases)} variant="contained">
+              Back to Leases
+            </Button>
+          </CardContent>
+        </Card>
       </Container>
     );
   }
@@ -296,228 +125,218 @@ export default function LeaseDetailPage() {
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Stack spacing={4}>
         {/* Header */}
-        <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
+        <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="h4" fontWeight="bold">
-            Lease Agreement Details
+            Lease Details
           </Typography>
-          <Stack direction="row" spacing={2}>
-            <Button
-              variant="contained"
-              startIcon={downloading ? <CircularProgress size={20} color="inherit" /> : <DownloadIcon />}
-              onClick={generatePDF}
-              disabled={downloading}
-            >
-              {downloading ? 'Generating...' : 'Download PDF'}
-            </Button>
-            <Button onClick={() => router.push(paths.landlord.leases)} variant="outlined">
-              Back to Leases
-            </Button>
-          </Stack>
+          <Button onClick={() => router.push(paths.landlord.leases)} variant="text">
+            Back to Leases
+          </Button>
         </Box>
 
-        {/* Status Badge */}
-        <Box>
-          <Chip
-            label={lease.status?.toUpperCase() || 'UNKNOWN'}
-            color={getStatusColor(lease.status || '')}
-            size="medium"
-          />
-        </Box>
-
-        {/* Property Information */}
-        <Card>
-          <CardContent>
-            <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <HomeIcon /> Property Information
-            </Typography>
-            <Divider sx={{ my: 2 }} />
-            <Grid container spacing={2}>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Typography variant="body2" color="text.secondary">
-                  Address
-                </Typography>
-                <Typography variant="body1" fontWeight="medium">
-                  {lease.property_address || 'N/A'}
-                </Typography>
-              </Grid>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Typography variant="body2" color="text.secondary">
-                  City
-                </Typography>
-                <Typography variant="body1" fontWeight="medium">
-                  {lease.property_city || 'N/A'}
-                </Typography>
-              </Grid>
-              {lease.property_title && (
-                <Grid size={{ xs: 12 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Property Title
-                  </Typography>
-                  <Typography variant="body1" fontWeight="medium">
-                    {lease.property_title}
-                  </Typography>
-                </Grid>
-              )}
-            </Grid>
-          </CardContent>
-        </Card>
-
-        {/* Parties Information */}
+        {/* Main Content */}
         <Grid container spacing={3}>
-          {/* Landlord Info */}
-          <Grid size={{ xs: 12, md: 6 }}>
+          {/* Left Column - Lease Information */}
+          <Grid size={{ xs: 12, md: 8 }}>
             <Card>
               <CardContent>
-                <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <PersonIcon /> Landlord
-                </Typography>
-                <Divider sx={{ my: 2 }} />
-                <Stack spacing={2}>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      Name
-                    </Typography>
+                <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+                  <Typography variant="h5" fontWeight="bold">
+                    Lease Information
+                  </Typography>
+                  <Chip label={lease.status?.toUpperCase() || 'UNKNOWN'} color={getStatusColor(lease.status)} />
+                </Box>
+
+                <Divider sx={{ mb: 3 }} />
+
+                {/* Property Details */}
+                <Box mb={3}>
+                  <Typography variant="h6" gutterBottom color="primary" display="flex" alignItems="center" gap={1}>
+                    <HomeIcon /> Property
+                  </Typography>
+                  <Stack spacing={1} sx={{ pl: 4 }}>
                     <Typography variant="body1" fontWeight="medium">
-                      {lease.landlord_name || 'N/A'}
+                      {lease.property_title || 'Property'}
                     </Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <EmailIcon fontSize="small" color="action" />
-                    <Typography variant="body2">{lease.landlord_email || 'N/A'}</Typography>
-                  </Box>
-                </Stack>
+                    <Typography variant="body2" color="text.secondary">
+                      {lease.property_address || 'No address'}
+                    </Typography>
+                    {lease.property_city && (
+                      <Typography variant="body2" color="text.secondary">
+                        {lease.property_city}
+                      </Typography>
+                    )}
+                  </Stack>
+                </Box>
+
+                <Divider sx={{ mb: 3 }} />
+
+                {/* Tenant Details */}
+                <Box mb={3}>
+                  <Typography variant="h6" gutterBottom color="primary" display="flex" alignItems="center" gap={1}>
+                    <PersonIcon /> Tenant
+                  </Typography>
+                  <Stack spacing={1} sx={{ pl: 4 }}>
+                    <Typography variant="body1" fontWeight="medium">
+                      {lease.tenant_name || lease.tenant_first_name + ' ' + lease.tenant_last_name || 'Tenant'}
+                    </Typography>
+                    {lease.tenant_email && (
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <EmailIcon fontSize="small" />
+                        <Typography variant="body2" color="text.secondary">
+                          {lease.tenant_email}
+                        </Typography>
+                      </Box>
+                    )}
+                    {lease.tenant_phone && (
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <PhoneIcon fontSize="small" />
+                        <Typography variant="body2" color="text.secondary">
+                          {lease.tenant_phone}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Stack>
+                </Box>
+
+                <Divider sx={{ mb: 3 }} />
+
+                {/* Landlord Details */}
+                {lease.landlord_name && (
+                  <>
+                    <Box mb={3}>
+                      <Typography variant="h6" gutterBottom color="primary">
+                        Landlord
+                      </Typography>
+                      <Stack spacing={1} sx={{ pl: 4 }}>
+                        <Typography variant="body1" fontWeight="medium">
+                          {lease.landlord_name}
+                        </Typography>
+                        {lease.landlord_email && (
+                          <Box display="flex" alignItems="center" gap={1}>
+                            <EmailIcon fontSize="small" />
+                            <Typography variant="body2" color="text.secondary">
+                              {lease.landlord_email}
+                            </Typography>
+                          </Box>
+                        )}
+                      </Stack>
+                    </Box>
+                    <Divider sx={{ mb: 3 }} />
+                  </>
+                )}
+
+                {/* Lease Terms */}
+                <Box>
+                  <Typography variant="h6" gutterBottom color="primary" display="flex" alignItems="center" gap={1}>
+                    <CalendarIcon /> Lease Terms
+                  </Typography>
+                  <Stack spacing={2} sx={{ pl: 4 }}>
+                    <Box display="flex" justifyContent="space-between">
+                      <Typography variant="body2" color="text.secondary">
+                        Start Date
+                      </Typography>
+                      <Typography variant="body1" fontWeight="medium">
+                        {formatDate(lease.start_date)}
+                      </Typography>
+                    </Box>
+                    <Box display="flex" justifyContent="space-between">
+                      <Typography variant="body2" color="text.secondary">
+                        End Date
+                      </Typography>
+                      <Typography variant="body1" fontWeight="medium">
+                        {formatDate(lease.end_date)}
+                      </Typography>
+                    </Box>
+                    <Box display="flex" justifyContent="space-between">
+                      <Typography variant="body2" color="text.secondary">
+                        Payment Due Day
+                      </Typography>
+                      <Typography variant="body1" fontWeight="medium">
+                        {lease.payment_due_day || 1} of each month
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </Box>
+
+                {/* Notes */}
+                {lease.notes && (
+                  <>
+                    <Divider sx={{ my: 3 }} />
+                    <Box>
+                      <Typography variant="h6" gutterBottom color="primary">
+                        Notes
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ pl: 4 }}>
+                        {lease.notes}
+                      </Typography>
+                    </Box>
+                  </>
+                )}
               </CardContent>
             </Card>
           </Grid>
 
-          {/* Tenant Info */}
-          <Grid size={{ xs: 12, md: 6 }}>
+          {/* Right Column - Financial Summary */}
+          <Grid size={{ xs: 12, md: 4 }}>
             <Card>
               <CardContent>
-                <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <PersonIcon /> Tenant
+                <Typography variant="h6" gutterBottom fontWeight="bold" display="flex" alignItems="center" gap={1}>
+                  <MoneyIcon /> Financial Summary
                 </Typography>
+
                 <Divider sx={{ my: 2 }} />
-                <Stack spacing={2}>
+
+                <Stack spacing={3}>
                   <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      Name
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Monthly Rent
                     </Typography>
-                    <Typography variant="body1" fontWeight="medium">
-                      {lease.tenant_name || `${lease.tenant_first_name || ''} ${lease.tenant_last_name || ''}`.trim() || 'N/A'}
+                    <Typography variant="h4" color="primary" fontWeight="bold">
+                      {formatCurrency(lease.monthly_rent)}
                     </Typography>
                   </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <EmailIcon fontSize="small" color="action" />
-                    <Typography variant="body2">{lease.tenant_email || 'N/A'}</Typography>
+
+                  <Divider />
+
+                  <Box>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Security Deposit
+                    </Typography>
+                    <Typography variant="h5" fontWeight="medium">
+                      {formatCurrency(lease.security_deposit)}
+                    </Typography>
                   </Box>
-                  {lease.tenant_phone && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <PhoneIcon fontSize="small" color="action" />
-                      <Typography variant="body2">{lease.tenant_phone}</Typography>
-                    </Box>
+
+                  {lease.utilities_cost > 0 && (
+                    <>
+                      <Divider />
+                      <Box>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          Utilities Cost
+                        </Typography>
+                        <Typography variant="h5" fontWeight="medium">
+                          {formatCurrency(lease.utilities_cost)}
+                        </Typography>
+                      </Box>
+                    </>
                   )}
+
+                  <Divider />
+
+                  <Box sx={{ bgcolor: 'grey.50', p: 2, borderRadius: 1 }}>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Total Monthly Payment
+                    </Typography>
+                    <Typography variant="h5" color="primary" fontWeight="bold">
+                      {formatCurrency((lease.monthly_rent || 0) + (lease.utilities_cost || 0))}
+                    </Typography>
+                  </Box>
                 </Stack>
               </CardContent>
             </Card>
           </Grid>
         </Grid>
-
-        {/* Lease Terms */}
-        <Card>
-          <CardContent>
-            <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <DescriptionIcon /> Lease Terms
-            </Typography>
-            <Divider sx={{ my: 2 }} />
-            <Grid container spacing={3}>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                  <CalendarIcon fontSize="small" color="action" />
-                  <Typography variant="body2" color="text.secondary">
-                    Lease Period
-                  </Typography>
-                </Box>
-                <Typography variant="body1" fontWeight="medium">
-                  {formatDate(lease.start_date)} - {formatDate(lease.end_date)}
-                </Typography>
-              </Grid>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                  <MoneyIcon fontSize="small" color="action" />
-                  <Typography variant="body2" color="text.secondary">
-                    Monthly Rent
-                  </Typography>
-                </Box>
-                <Typography variant="h5" color="primary" fontWeight="bold">
-                  {formatCurrency(lease.monthly_rent)}
-                </Typography>
-              </Grid>
-              <Grid size={{ xs: 12, md: 4 }}>
-                <Typography variant="body2" color="text.secondary">
-                  Security Deposit
-                </Typography>
-                <Typography variant="body1" fontWeight="medium">
-                  {formatCurrency(lease.security_deposit)}
-                </Typography>
-              </Grid>
-              {lease.utilities_cost && lease.utilities_cost > 0 && (
-                <Grid size={{ xs: 12, md: 4 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Utilities Cost
-                  </Typography>
-                  <Typography variant="body1" fontWeight="medium">
-                    {formatCurrency(lease.utilities_cost)}
-                  </Typography>
-                </Grid>
-              )}
-              <Grid size={{ xs: 12, md: 4 }}>
-                <Typography variant="body2" color="text.secondary">
-                  Payment Due Day
-                </Typography>
-                <Typography variant="body1" fontWeight="medium">
-                  Day {lease.payment_due_day || 'N/A'} of each month
-                </Typography>
-              </Grid>
-            </Grid>
-          </CardContent>
-        </Card>
-
-        {/* Additional Notes */}
-        {lease.notes && (
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom fontWeight="bold">
-                Additional Notes
-              </Typography>
-              <Divider sx={{ my: 2 }} />
-              <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
-                {lease.notes}
-              </Typography>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Document Link */}
-        {lease.lease_document_url && (
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom fontWeight="bold">
-                Lease Document
-              </Typography>
-              <Divider sx={{ my: 2 }} />
-              <Button
-                href={lease.lease_document_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                variant="outlined"
-                startIcon={<DownloadIcon />}
-              >
-                View Original Document
-              </Button>
-            </CardContent>
-          </Card>
-        )}
       </Stack>
     </Container>
   );
