@@ -162,33 +162,25 @@ export const propertiesApi = {
   /**
    * Get property by ID
    */
-  getById: async (id: number | string): Promise<Property> => {
-    if (!id && id !== 0) {
-      throw new Error('Property id is required');
-    }
 
-    const response = await api.get<Property>(`/properties/${encodeURIComponent(String(id))}`);
-    const property = response.data;
-    const amenities = typeof property.amenities === 'string' ? JSON.parse(property.amenities) : property.amenities;
+  getById: async (id: string): Promise<Property> => {
+  if (!id) {
+    throw new Error('Property id is required');
+  }
 
-    const rent_amount = property.rent_amount ?? property.monthlyRent ?? property.monthly_rent ?? 0;
-    const security_deposit = property.security_deposit ?? property.securityDeposit ?? property.security_deposit ?? 0;
-    const property_type = property.property_type ?? property.propertyType;
-    const square_feet = property.square_feet ?? property.squareFeet ?? property.square_feet ?? null;
+  const response = await api.get<Property>(`/properties/${encodeURIComponent(id)}`);
+  const property = response.data;
 
-    return {
-      ...property,
-      amenities,
-      utilities_included: Boolean(property.utilities_included),
-      pet_friendly: Boolean(property.pet_friendly),
-      parking_available: Boolean(property.parking_available),
-      // Normalized fields
-      rent_amount,
-      security_deposit,
-      property_type,
-      square_feet,
-    } as unknown as Property;
-  },
+  return {
+    ...property,
+    amenities: typeof property.amenities === 'string'
+      ? JSON.parse(property.amenities)
+      : property.amenities,
+    utilities_included: Boolean(property.utilities_included),
+    pet_friendly: Boolean(property.pet_friendly),
+    parking_available: Boolean(property.parking_available),
+  };
+},
 
   /**
    * Create new property (landlord only)
@@ -220,8 +212,12 @@ export const propertiesApi = {
   /**
    * Update property (landlord only)
    */
-  update: async (id: number | string, data: Partial<PropertyFormData>) => {
-    const encodedId = encodeURIComponent(String(id));
+  /**
+ * Update property (landlord only)
+ */
+  update: async (id: string, data: Partial<PropertyFormData>) => {
+    if (!id) throw new Error('Property id is required');
+
     if (data.images && data.images.length > 0) {
       const formData = new FormData();
       Object.entries(data).forEach(([key, value]) => {
@@ -233,12 +229,13 @@ export const propertiesApi = {
           formData.append(key, String(value));
         }
       });
-      const response = await api.put(`/properties/${encodedId}`, formData, {
+
+      const response = await api.put(`/properties/${encodeURIComponent(id)}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       return response.data;
     } else {
-      const response = await api.put(`/properties/${encodedId}`, data);
+      const response = await api.put(`/properties/${encodeURIComponent(id)}`, data);
       return response.data;
     }
   },
@@ -246,11 +243,12 @@ export const propertiesApi = {
   /**
    * Delete property (landlord only)
    */
-  delete: async (id: number | string) => {
-    const encodedId = encodeURIComponent(String(id));
-    const response = await api.delete(`/properties/${encodedId}`);
+  delete: async (id: string) => {
+    if (!id) throw new Error('Property id is required');
+    const response = await api.delete(`/properties/${encodeURIComponent(id)}`);
     return response.data;
   },
+
 };
 
 // ============================================================================
@@ -269,9 +267,8 @@ export const leasesApi = {
   /**
    * Get lease by ID
    */
-  getById: async (id: number | string): Promise<Lease> => {
-    const encodedId = encodeURIComponent(String(id));
-    const response = await api.get<Lease>(`/leases/${encodedId}`);
+  getById: async (id: number): Promise<Lease> => {
+    const response = await api.get<Lease>(`/leases/${id}`);
     return response.data;
   },
 
