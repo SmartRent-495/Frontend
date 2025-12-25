@@ -260,16 +260,17 @@ export const leasesApi = {
    * Get all leases with optional filters
    */
   getAll: async (filters?: LeaseFilters): Promise<Lease[]> => {
-    const response = await api.get<Lease[]>('/leases', { params: filters });
-    return response.data;
+    const response = await api.get<{ status: string; data: Lease[] }>('/leases', { params: filters });
+    return response.data.data;
   },
 
   /**
    * Get lease by ID
    */
-  getById: async (id: number): Promise<Lease> => {
-    const response = await api.get<Lease>(`/leases/${id}`);
-    return response.data;
+  getById: async (id: number | string): Promise<Lease> => {
+    const encodedId = encodeURIComponent(String(id));
+    const response = await api.get<{ status: string; data: Lease }>(`/leases/${encodedId}`);
+    return response.data.data;
   },
 
   /**
