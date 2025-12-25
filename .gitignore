@@ -1,7 +1,9 @@
 node_modules/
-
 .next/
-
 .env.local
-
 .DS_Store
+
+# Build artifacts and generated files
+frontend-build.log
+workspace-metrics.json
+source-metrics-report.json

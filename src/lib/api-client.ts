@@ -220,7 +220,8 @@ export const propertiesApi = {
   /**
    * Update property (landlord only)
    */
-  update: async (id: number, data: Partial<PropertyFormData>) => {
+  update: async (id: number | string, data: Partial<PropertyFormData>) => {
+    const encodedId = encodeURIComponent(String(id));
     if (data.images && data.images.length > 0) {
       const formData = new FormData();
       Object.entries(data).forEach(([key, value]) => {
@@ -232,12 +233,12 @@ export const propertiesApi = {
           formData.append(key, String(value));
         }
       });
-      const response = await api.put(`/properties/${id}`, formData, {
+      const response = await api.put(`/properties/${encodedId}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       return response.data;
     } else {
-      const response = await api.put(`/properties/${id}`, data);
+      const response = await api.put(`/properties/${encodedId}`, data);
       return response.data;
     }
   },
@@ -245,8 +246,9 @@ export const propertiesApi = {
   /**
    * Delete property (landlord only)
    */
-  delete: async (id: number) => {
-    const response = await api.delete(`/properties/${id}`);
+  delete: async (id: number | string) => {
+    const encodedId = encodeURIComponent(String(id));
+    const response = await api.delete(`/properties/${encodedId}`);
     return response.data;
   },
 };
@@ -267,8 +269,9 @@ export const leasesApi = {
   /**
    * Get lease by ID
    */
-  getById: async (id: number): Promise<Lease> => {
-    const response = await api.get<Lease>(`/leases/${id}`);
+  getById: async (id: number | string): Promise<Lease> => {
+    const encodedId = encodeURIComponent(String(id));
+    const response = await api.get<Lease>(`/leases/${encodedId}`);
     return response.data;
   },
 

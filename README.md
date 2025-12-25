@@ -1,3 +1,167 @@
+# SmartRent Frontend
+
+Next.js web application for the SmartRent property management platform. Built with TypeScript, App Router, and Material UI.
+
+## Prerequisites
+
+- Node.js v18 or higher
+- npm (or pnpm if preferred)
+- Backend server running on http://localhost:5000
+
+## Quick Start
+
+1. **Install dependencies**
+```powershell
+npm install
+```
+
+2. **Configure environment**
+
+Create `.env.local` in the project root:
+
+```env
+# Backend API
+NEXT_PUBLIC_API_URL=http://localhost:5000/api
+
+# Firebase Configuration
+NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+
+# Stripe (optional for client-side testing)
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+```
+
+**Important**: Never expose server secrets (`STRIPE_SECRET_KEY`, Firebase service account) as `NEXT_PUBLIC_*` variables. Those belong in the backend environment only.
+
+3. **Start development server**
+```powershell
+npm run dev
+```
+
+Application will be available at http://localhost:3000
+
+4. **Build for production**
+```powershell
+npm run build
+npm start
+```
+
+## Project Structure
+
+```
+Frontend/
+├── src/
+│   ├── app/                    # Next.js App Router pages
+│   │   ├── auth/               # Authentication (sign-in, sign-up, reset-password)
+│   │   ├── landlord/           # Landlord dashboard and features
+│   │   │   ├── properties/
+│   │   │   │   ├── create/     # Create property form
+│   │   │   │   └── [id]/
+│   │   │   │       ├── page.tsx    # Property detail (view, delete)
+│   │   │   │       └── edit/       # Edit property form
+│   │   │   ├── leases/
+│   │   │   │   ├── new/        # Create lease
+│   │   │   │   └── [id]/       # Lease detail page
+│   │   │   ├── payments/       # Payment management
+│   │   │   ├── maintenance/    # Maintenance requests
+│   │   │   └── tenants/        # Tenant management
+│   │   └── tenant/             # Tenant dashboard and features
+│   │       ├── payments/       # Rent payment and history
+│   │       ├── maintenance/    # Submit maintenance requests
+│   │       └── properties/     # View assigned properties
+│   ├── components/             # Reusable UI components
+│   ├── contexts/               # React Context providers
+│   ├── hooks/                  # Custom React hooks
+│   ├── lib/                    # Utilities and API client
+│   │   ├── api-client.ts       # Axios-based API wrapper
+│   │   └── firebase/           # Firebase initialization
+│   ├── styles/                 # Global styles and theme
+│   └── types/                  # TypeScript type definitions
+├── public/                     # Static assets
+├── .env.local                  # Local environment variables (not committed)
+├── next.config.js              # Next.js configuration
+└── package.json                # Dependencies and scripts
+```
+
+## Key Routes
+
+### Landlord
+- `/landlord/properties` - Property list
+- `/landlord/properties/create` - Add new property
+- `/landlord/properties/[id]` - Property details (view, edit, delete)
+- `/landlord/properties/[id]/edit` - Edit property form
+- `/landlord/leases` - Lease management
+- `/landlord/leases/[id]` - Lease details
+- `/landlord/payments` - Payment tracking
+- `/landlord/maintenance` - Maintenance request dashboard
+
+### Tenant
+- `/tenant/properties` - View assigned properties
+- `/tenant/payments` - Rent payment and history
+- `/tenant/payments/[paymentId]` - Payment detail and Stripe checkout
+- `/tenant/maintenance` - Submit and track maintenance requests
+
+## Available Scripts
+
+```powershell
+npm run dev          # Start development server (port 3000)
+npm run build        # Build production bundle
+npm start            # Start production server
+npm run lint         # Run ESLint
+npm test             # Run tests (if configured)
+```
+
+## API Integration
+
+The frontend communicates with the backend through `src/lib/api-client.ts`, which uses Axios with automatic Firebase token injection. All requests require authentication except for `/auth/login` and `/auth/register`.
+
+API base URL is configured via `NEXT_PUBLIC_API_URL`. Ensure the backend is running before starting the frontend.
+
+## Firebase Setup
+
+The app uses Firebase for authentication and notifications:
+
+1. Create a Firebase project at https://console.firebase.google.com
+2. Enable Authentication (Email/Password)
+3. Copy your web app configuration to `.env.local`
+4. For backend integration, download the service account JSON and configure it in the backend repository
+
+## Deployment
+
+The frontend is deployed to Vercel:
+
+```powershell
+npm run build
+vercel deploy --prod
+```
+
+Configure environment variables in Vercel dashboard before deploying.
+
+## Troubleshooting
+
+**Multiple lockfiles warning**: The project has both `package-lock.json` and `pnpm-lock.yaml`. If you prefer `pnpm`, delete `package-lock.json` and run `pnpm install`. Otherwise, use `npm install`.
+
+**Firebase initialization errors**: Verify all `NEXT_PUBLIC_FIREBASE_*` variables are set in `.env.local`.
+
+**API connection refused**: Ensure the backend server is running at the URL specified in `NEXT_PUBLIC_API_URL`.
+
+**Build fails with type errors**: Run `npm run build` to see specific TypeScript errors. Check that all required environment variables are defined.
+
+## Contributing
+
+1. Create a feature branch: `git checkout -b feature/your-feature`
+2. Make changes and test locally
+3. Run lint and build: `npm run lint && npm run build`
+4. Commit changes: `git commit -m "Description of changes"`
+5. Push and create pull request
+
+## License
+
+MIT License
 **Install Frontend Dependencies**
    ```bash
    cd ../frontend
@@ -135,4 +299,4 @@ This project is licensed under the MIT License.
 
 ---
 
-**Built with ❤️ by Team SmartRent**
+**Built by Team SmartRent**

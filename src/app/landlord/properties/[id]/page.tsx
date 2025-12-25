@@ -13,6 +13,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { ArrowLeftIcon } from '@phosphor-icons/react/dist/ssr/ArrowLeft';
 import { PencilIcon } from '@phosphor-icons/react/dist/ssr/Pencil';
+import DeleteIcon from '@mui/icons-material/Delete';
 import RouterLink from 'next/link';
 
 import { propertiesApi } from '@/lib/api-client';
@@ -76,14 +77,37 @@ export default function Page(): React.JSX.Element {
         >
           Back to Properties
         </Button>
-        <Button
-          component={RouterLink}
-          href={`${paths.landlord.properties}/${property.id}/edit`}
-          startIcon={<PencilIcon />}
-          variant="contained"
-        >
-          Edit Property
-        </Button>
+        <Stack direction="row" spacing={1}>
+          <Button
+            component={RouterLink}
+            href={`${paths.landlord.properties}/${property.id}/edit`}
+            startIcon={<PencilIcon />}
+            variant="contained"
+          >
+            Edit Property
+          </Button>
+          <Button
+            startIcon={<DeleteIcon />}
+            color="error"
+            variant="outlined"
+            onClick={async () => {
+              // Confirm before deleting
+              const ok = window.confirm('Are you sure you want to delete this property? This action cannot be undone.');
+              if (!ok) return;
+              try {
+                await propertiesApi.delete(property.id as any);
+                // After deletion, go back to properties list
+                router.push(paths.landlord.properties);
+                router.refresh();
+              } catch (err) {
+                console.error('Failed to delete property', err);
+                alert('Failed to delete property');
+              }
+            }}
+          >
+            Delete
+          </Button>
+        </Stack>
       </Stack>
 
       <Grid container spacing={3}>
